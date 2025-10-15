@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6382003808647384392}
   - component: {fileID: 2725166914234832952}
   - component: {fileID: 7470051569371660707}
-  - component: {fileID: 5790725211355870978}
+  - component: {fileID: 1954386908752407162}
   m_Layer: 0
   m_Name: PlayerPrefab
   m_TagString: Untagged
@@ -30,10 +30,11 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.5162, y: 1.5162, z: 1.5162}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4619164526025437776}
+  - {fileID: 8724207543080240248}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6382003808647384392
@@ -54,7 +55,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7470051569371660707}
-  - {fileID: 5790725211355870978}
+  - {fileID: 1954386908752407162}
   ForceRemoteRenderTimeframe: 0
 --- !u!143 &2725166914234832952
 CharacterController:
@@ -100,7 +101,7 @@ MonoBehaviour:
   braking: 10
   maxSpeed: 4
   rotationSpeed: 15
---- !u!114 &5790725211355870978
+--- !u!114 &1954386908752407162
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -109,11 +110,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 971273634166619730}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 04b1b2adc58fbcd46a8fcaf08965945a, type: 3}
+  m_Script: {fileID: 11500000, guid: c5a6f3bfc327bab49b8ee7fd18220976, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _prefabBall: {fileID: 7361970138857564851, guid: e3a9054176d9ac142a317c4052573c30, type: 3}
   _prefabPhysxBall: {fileID: 6111443189112950002, guid: 6cfcb5c98bc78aa4397c7a9dd88753c8, type: 3}
+  _material: {fileID: 0}
+  _spawnedProjectile: 0
+  _HeldItem: {fileID: 0}
+  holdPoint: {fileID: 8724207543080240248}
+  interactRange: 2
+  interactHeight: 0.5
 --- !u!1 &3323721355117132690
 GameObject:
   m_ObjectHideFlags: 0
@@ -200,3 +207,34 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &4769278781366934968
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8724207543080240248}
+  m_Layer: 0
+  m_Name: HoldingPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8724207543080240248
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4769278781366934968}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0.561}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8500597612245820913}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
