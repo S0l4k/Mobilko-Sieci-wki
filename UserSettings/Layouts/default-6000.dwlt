@@ -220,8 +220,8 @@ MonoBehaviour:
     y: 0
     width: 457.59998
     height: 1004.80005
-  m_MinSize: {x: 275, y: 50}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 276, y: 76}
+  m_MaxSize: {x: 4001, y: 4026}
   m_ActualView: {fileID: 14}
   m_Panes:
   - {fileID: 14}
@@ -337,8 +337,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Hierarchy\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 969.60004
-    y: 79.200005
+    x: 970.6
+    y: 24
     width: 325.20007
     height: 978.80005
   m_SerializedDataModeController:
@@ -355,23 +355,23 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: aaa7fdff
-      m_LastClickedID: -153686
+      m_SelectedIDs: 
+      m_LastClickedID: 0
       m_ExpandedIDs: d07dfeff6ea1feffe2c9feff7229ffffb045ffffc845ffff9248ffff1a4bffff3c52ffff1ae9000024e90000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: PlayerPrefab(Clone)
-        m_OriginalName: PlayerPrefab(Clone)
+        m_Name: 
+        m_OriginalName: 
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: -153686
+        m_UserData: 0
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 0
+        m_OriginalEventType: 11
         m_IsRenamingFilename: 0
         m_TrimLeadingAndTrailingWhitespace: 0
         m_ClientGUIView: {fileID: 7}
@@ -403,8 +403,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Inspector\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1590.4
-    y: 79.200005
+    x: 1591.4
+    y: 24
     width: 456.59998
     height: 978.80005
   m_SerializedDataModeController:
@@ -452,8 +452,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Project\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1296.8
-    y: 79.200005
+    x: 1297.8
+    y: 24
     width: 291.59998
     height: 978.80005
   m_SerializedDataModeController:
@@ -497,21 +497,21 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 06e70000
     m_LastClickedID: 59142
-    m_ExpandedIDs: 00000000fee600000ae7000000ca9a3bffffff7f
+    m_ExpandedIDs: 
     m_RenameOverlay:
       m_UserAcceptedRename: 0
-      m_Name: Scenes
-      m_OriginalName: Scenes
+      m_Name: 
+      m_OriginalName: 
       m_EditFieldRect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 0
         height: 0
-      m_UserData: 59144
+      m_UserData: 0
       m_IsWaitingForDelay: 0
       m_IsRenaming: 0
-      m_OriginalEventType: 0
+      m_OriginalEventType: 11
       m_IsRenamingFilename: 1
       m_TrimLeadingAndTrailingWhitespace: 0
       m_ClientGUIView: {fileID: 8}
@@ -606,7 +606,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 594.4
+    y: 539.2
     width: 968.6
     height: 463.60004
   m_SerializedDataModeController:
@@ -678,7 +678,7 @@ MonoBehaviour:
       height: 864
     m_MinimalGUI: 1
   m_defaultScale: 0.51226854
-  m_LastWindowPixelSize: {x: 1210.75, y: 579.50006}
+  m_LastWindowPixelSize: {x: 968.6, y: 463.60004}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
   m_LowResolutionForAspectRatios: 00000000000000000000
@@ -707,7 +707,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 79.200005
+    y: 24
     width: 968.6
     height: 489.2
   m_SerializedDataModeController:
@@ -1168,7 +1168,7 @@ MonoBehaviour:
   m_Position:
     m_Target: {x: 5.2008686, y: 2.1590674, z: -2.4955878}
     speed: 2
-    m_Value: {x: 5.200831, y: 2.1590421, z: -2.4955597}
+    m_Value: {x: 5.2008686, y: 2.1590674, z: -2.4955878}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1216,11 +1216,11 @@ MonoBehaviour:
   m_Rotation:
     m_Target: {x: -0.34720418, y: 0.01437025, z: -0.0052552964, w: -0.9377289}
     speed: 2
-    m_Value: {x: -0.3460639, y: 0.013249984, z: -0.0048224633, w: -0.93810505}
+    m_Value: {x: -0.34720415, y: 0.014370249, z: -0.0052552964, w: -0.9377288}
   m_Size:
     m_Target: 0.8660254
     speed: 2
-    m_Value: 1.387964
+    m_Value: 0.8660254
   m_Ortho:
     m_Target: 0
     speed: 2

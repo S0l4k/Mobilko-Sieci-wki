@@ -8,10 +8,14 @@ using UnityEngine.SceneManagement;
 
 public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 {
-    [SerializeField] private NetworkPrefabRef _playerPrefab;
+    [SerializeField] private NetworkPrefabRef _hostPrefab;
+    [SerializeField] private NetworkPrefabRef _clientPrefab;
     private Dictionary<PlayerRef, NetworkObject> _spawnedCharacters = new Dictionary<PlayerRef, NetworkObject>();
     private bool _mouseButton0;
     private bool _mouseButton1;
+    [SerializeField] private Transform hostSpawn;
+    [SerializeField] private Transform clientSpawn;
+
     private void Update()
     {
         _mouseButton0 = _mouseButton0 || Input.GetMouseButton(0);
@@ -20,15 +24,22 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
 
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-        if (runner.IsServer)
-        {
-            // Create a unique position for the player
-            Vector3 spawnPosition = new Vector3((player.RawEncoded % runner.Config.Simulation.PlayerCount) * 3, 1, 0);
-            NetworkObject networkPlayerObject = runner.Spawn(_playerPrefab, spawnPosition, Quaternion.identity, player);
-            // Keep track of the player avatars for easy access
-            _spawnedCharacters.Add(player, networkPlayerObject);
-        }
+        if (!runner.IsServer) return;
+
+        // Wybór prefab
+        NetworkPrefabRef prefabToSpawn = player == runner.LocalPlayer ? _hostPrefab : _clientPrefab;
+
+        // Wybór pozycji
+        Vector3 spawnPos = player == runner.LocalPlayer ? hostSpawn.position : clientSpawn.position;
+
+        // Spawnowanie
+        NetworkObject networkPlayerObject = runner.Spawn(prefabToSpawn, spawnPos, Quaternion.identity, player);
+
+        // Zapis instancji
+        _spawnedCharacters.Add(player, networkPlayerObject);
     }
+
+
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
         if (_spawnedCharacters.TryGetValue(player, out NetworkObject networkObject))

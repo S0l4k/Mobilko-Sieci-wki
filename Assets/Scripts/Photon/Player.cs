@@ -1,35 +1,22 @@
 ﻿using Fusion;
-using TMPro;
 using UnityEngine;
 
 public class Player : NetworkBehaviour
 {
-    [SerializeField] private Ball _prefabBall;
-    [SerializeField] private PhysxBall _prefabPhysxBall;
-    public Material _material;
+    [Networked] public NetworkObject HeldItem { get; private set; }
 
-
-    [Networked] private TickTimer delay { get; set; }
-    [Networked]
-    public bool spawnedProjectile { get; set; }
-    [Networked] private TickTimer messageLife { get; set; }
-    [Networked]
-    public NetworkObject HeldItem { get; set; }
-
-    private NetworkCharacterController _cc;
-    private Vector3 _forward;
     [SerializeField] private Transform holdPoint;
-    public bool IsHolding(NetworkObject item)
-    {
-        return HeldItem == item;
-    }
+    [SerializeField] private float interactRange = 2f;
+    [SerializeField] private float interactHeight = 1.5f;
+
+    private Vector3 _forward;
+    private NetworkCharacterController _cc;
+
     private void Awake()
     {
         _cc = GetComponent<NetworkCharacterController>();
         _forward = transform.forward;
-        _material = GetComponentInChildren<MeshRenderer>().material;
     }
-
 
     public override void FixedUpdateNetwork()
     {
@@ -41,164 +28,41 @@ public class Player : NetworkBehaviour
             if (data.direction.sqrMagnitude > 0)
                 _forward = data.direction;
 
-            if (HasStateAuthority && delay.ExpiredOrNotRunning(Runner))
-            {
-                /*if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON0))
-                {
-                    delay = TickTimer.CreateFromSeconds(Runner, 0.5f);
-                    Runner.Spawn(_prefabBall,
-                      transform.position + _forward,
-                      Quaternion.LookRotation(_forward),
-                      Object.InputAuthority,
-                      (runner, o) =>
-                      {
-                          // Initialize the Ball before synchronizing it
-                          o.GetComponent<Ball>().Init();
-                          spawnedProjectile = !spawnedProjectile;
-                      });
-                }
-                else if (data.buttons.IsSet(NetworkInputData.MOUSEBUTTON1))
-                {
-                    delay = TickTimer.CreateFromSeconds(Runner, 0.5f);
-                    Runner.Spawn(_prefabPhysxBall,
-                      transform.position + _forward,
-                      Quaternion.LookRotation(_forward),
-                      Object.InputAuthority,
-                      (runner, o) =>
-                      {
-                          spawnedProjectile = !spawnedProjectile;
-                          o.GetComponent<PhysxBall>().Init(10 * _forward);
-                      });
-                }*/
-            }
             if (Object.HasInputAuthority && data.buttons.IsSet(NetworkInputData.INTERACT))
-            {
                 TryInteract();
-            }
-            if (HeldItem != null)
-            {
-                // 🔹 jeśli przedmiot nie jest na stole, trzymamy go w ręce
-                Table table = HeldItem.GetComponent<Table>();
-                if (table == null || table.HeldItem != HeldItem)
-                {
-                    HeldItem.transform.position = holdPoint.position;
-                    HeldItem.transform.rotation = holdPoint.rotation;
-                }
-            }
-
-
         }
 
-    }
-    private ChangeDetector _changeDetector;
-
-    public override void Spawned()
-    {
-        _changeDetector = GetChangeDetector(ChangeDetector.Source.SimulationState);
-    }
-    public override void Render()
-    {
-        /*foreach (var change in _changeDetector.DetectChanges(this))
+        // Aktualizacja pozycji trzymanego przedmiotu przez właściciela
+        if (HeldItem != null && Object.HasInputAuthority)
         {
-            switch (change)
-            {
-                case nameof(spawnedProjectile):
-                    _material.color = Color.white;
-                    break;
-            }
+            HeldItem.transform.position = holdPoint.position;
+            HeldItem.transform.rotation = holdPoint.rotation;
         }
-        _material.color = Color.Lerp(_material.color, Color.blue, Time.deltaTime);
-       */
     }
-    private void Update()
-    {
-       /* if (Object.HasInputAuthority && Input.GetKeyDown(KeyCode.R))
-        {
-            RPC_SendMessage("Hey Mate!");
-        }*/
-    }
-    private TMP_Text _messages;
-
-    /* [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority, HostMode = RpcHostMode.SourceIsHostPlayer)]
-     public void RPC_SendMessage(string message, RpcInfo info = default)
-     {
-         RPC_RelayMessage(message, info.Source);
-     }
-
-     [Rpc(RpcSources.StateAuthority, RpcTargets.All, HostMode = RpcHostMode.SourceIsServer)]
-     public void RPC_RelayMessage(string message, PlayerRef messageSource)
-     {
-         if (_messages == null)
-             _messages = FindObjectOfType<TMP_Text>();
-
-         if (messageSource == Runner.LocalPlayer)
-         {
-             message = $"You said: {message}\n";
-         }
-         else
-         {
-             message = $"Some other player said: {message}\n";
-         }
-
-         _messages.text += message;
-
-     }*/
-
-    [SerializeField] private float interactRange = 2f; // zwiększ dystans
-    [SerializeField] private float interactHeight = 2f;
-    [SerializeField] private float interactRadius = 0.5f;
-    private IInteractable currentTarget;
 
     private void TryInteract()
     {
         Vector3 start = transform.position + Vector3.up * interactHeight;
+        Collider[] hits = Physics.OverlapSphere(start + _forward * interactRange, 0.5f);
 
-        if (Physics.SphereCast(start, interactRadius, _forward, out RaycastHit hit, interactRange))
+        foreach (var hit in hits)
         {
-            if (hit.collider.TryGetComponent(out IInteractable interactable))
+            if (hit.TryGetComponent(out IInteractable interactable))
             {
-                // Jeśli trzymasz przedmiot i trafiasz w stół
-                if (HeldItem != null && interactable is Table table)
-                {
-                    table.RPC_SetHeldItem(Object, HeldItem);
-                    HeldItem = null;
-                    return;
-                }
-
-                // Jeśli trzymasz przedmiot, a to nie stół
                 if (HeldItem != null)
                 {
                     Drop();
                     return;
                 }
 
-                // Jeśli nie trzymasz przedmiotu, podnieś go
                 interactable.Interact(this);
 
-                if (interactable.CanBePickedUp && hit.collider.TryGetComponent(out NetworkObject netObj))
+                if (interactable.CanBePickedUp && hit.TryGetComponent(out NetworkObject netObj))
                 {
-                    Pickup(netObj);
+                    RPC_Pickup(netObj);
+                    return;
                 }
             }
-        }
-    }
-
-
-
-    public void Pickup(NetworkObject item)
-    {
-        if (HeldItem != null) return; // już trzymasz coś
-
-        HeldItem = item;
-
-        // ustaw obiekt w rękach gracza
-        HeldItem.transform.position = holdPoint.position;
-        HeldItem.transform.rotation = holdPoint.rotation;
-        Collider playerCollider = GetComponent<Collider>();
-        Collider itemCollider = HeldItem.GetComponent<Collider>();
-        if (playerCollider != null && itemCollider != null)
-        {
-            Physics.IgnoreCollision(playerCollider, itemCollider, true);
         }
     }
 
@@ -206,43 +70,93 @@ public class Player : NetworkBehaviour
     {
         if (HeldItem == null) return;
 
-        // SphereCast przed graczem, żeby sprawdzić stół
-        Vector3 start = transform.position + Vector3.up * interactHeight;
-        float dropRange = 2f;
-        if (Physics.SphereCast(start, interactRadius, _forward, out RaycastHit hit, dropRange))
+        Vector3 origin = holdPoint.position;
+        float radius = 0.5f;
+        float distance = 2f;
+
+        if (Physics.SphereCast(origin, radius, _forward, out RaycastHit hit, distance))
         {
-            if (hit.collider.TryGetComponent(out Table table))
+            if (hit.collider.TryGetComponent<Table>(out Table table))
             {
-                table.RPC_SetHeldItem(Object, HeldItem);
-                HeldItem = null;
+                RPC_PlaceOnTable(table.Object, HeldItem);
                 return;
             }
         }
 
-        // Standardowe odłożenie przedmiotu
-        Collider playerCollider = GetComponent<Collider>();
-        Collider itemCollider = HeldItem.GetComponent<Collider>();
-        if (playerCollider != null && itemCollider != null)
-            Physics.IgnoreCollision(playerCollider, itemCollider, false);
-
-        HeldItem.transform.position = holdPoint.position + transform.forward * 0.5f;
-        HeldItem.transform.rotation = Quaternion.identity;
-        HeldItem = null;
+        Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
+        RPC_DropItem(HeldItem, dropPos, Quaternion.identity);
     }
-    public void ClearHeldItem()
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    public void RPC_Pickup(NetworkObject item)
     {
-        if (HeldItem == null) return;
+        if (HeldItem != null || item == null) return;
 
-        // przywróć kolizję z graczem jeśli wcześniej wyłączona
-        Collider playerCollider = GetComponent<Collider>();
-        Collider itemCollider = HeldItem.GetComponent<Collider>();
-        if (playerCollider != null && itemCollider != null)
-            Physics.IgnoreCollision(playerCollider, itemCollider, false);
+        HeldItem = item;
 
-        HeldItem = null;
+        // Wyłącz fizykę
+        Rigidbody rb = item.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        // Ignoruj kolizję gracza i przedmiotu
+        Collider playerCol = GetComponent<Collider>();
+        Collider itemCol = item.GetComponent<Collider>();
+        if (playerCol && itemCol)
+            Physics.IgnoreCollision(playerCol, itemCol, true);
+
+        // Teraz nadaj InputAuthority temu obiektowi
+        if (Runner != null && item != null)
+        {
+            // Zmieniamy właściciela
+            item.AssignInputAuthority(Object.InputAuthority);
+        }
     }
+
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    public void RPC_DropItem(NetworkObject itemObj, Vector3 pos, Quaternion rot)
+    {
+        if (itemObj == null) return;
+
+        Rigidbody rb = itemObj.GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = false;
+
+        itemObj.transform.position = pos;
+        itemObj.transform.rotation = rot;
+
+        Collider playerCol = GetComponent<Collider>();
+        Collider itemCol = itemObj.GetComponent<Collider>();
+        if (playerCol && itemCol)
+            Physics.IgnoreCollision(playerCol, itemCol, false);
+
+        if (HeldItem == itemObj)
+            HeldItem = null;
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject itemObj)
+    {
+        if (tableObj == null || itemObj == null) return;
+
+        Table table = tableObj.GetComponent<Table>();
+        if (table == null || table.HeldItem != null) return;
+
+        table.ReceiveItem(itemObj);
+        HeldItem = null;
+
+        Rigidbody rb = itemObj.GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = true;
+    }
+
     private void OnDrawGizmos()
     {
-        Debug.DrawRay(transform.position + Vector3.up * interactHeight, _forward * interactRange, Color.red, 0.1f);
+        Gizmos.color = Color.yellow;
+        Vector3 start = transform.position + Vector3.up * interactHeight;
+        Gizmos.DrawWireSphere(start + _forward * interactRange, 0.4f);
     }
 }

@@ -3,28 +3,29 @@ using UnityEngine;
 
 public class Table : NetworkBehaviour, IInteractable
 {
-    [Networked] public NetworkObject HeldItem { get; set; }
+    [Networked] public NetworkObject HeldItem { get; private set; }
     public bool CanBePickedUp => false;
+
     [SerializeField] private Transform placePoint;
 
     public void Interact(Player player)
     {
-        // Wymagane przez interfejs, ale nie używamy
+        if (HeldItem != null && player.HeldItem == null)
+        {
+            player.RPC_Pickup(HeldItem);
+            HeldItem = null;
+        }
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void RPC_SetHeldItem(NetworkObject playerObj, NetworkObject item)
+    public void ReceiveItem(NetworkObject item)
     {
-        if (HeldItem != null || item == null || playerObj == null)
-            return;
-
-        Player player = playerObj.GetComponent<Player>();
-        if (player == null) return;
+        if (HeldItem != null || item == null) return;
 
         HeldItem = item;
-        HeldItem.transform.position = placePoint.position;
-        HeldItem.transform.rotation = placePoint.rotation;
+        item.transform.position = placePoint.position + Vector3.up * 0.05f;
+        item.transform.rotation = placePoint.rotation;
 
-        player.ClearHeldItem();
+        Rigidbody rb = item.GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = true;
     }
 }
