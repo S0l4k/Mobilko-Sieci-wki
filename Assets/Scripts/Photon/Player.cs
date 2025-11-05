@@ -32,12 +32,13 @@ public class Player : NetworkBehaviour
                 TryInteract();
         }
 
-        // Aktualizacja pozycji trzymanego przedmiotu przez właściciela
-        if (HeldItem != null && Object.HasInputAuthority)
+
+        if (HeldItem != null && Object.HasStateAuthority)
         {
             HeldItem.transform.position = holdPoint.position;
             HeldItem.transform.rotation = holdPoint.rotation;
         }
+
     }
 
     private void TryInteract()
@@ -94,7 +95,6 @@ public class Player : NetworkBehaviour
 
         HeldItem = item;
 
-        // Wyłącz fizykę
         Rigidbody rb = item.GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -103,20 +103,13 @@ public class Player : NetworkBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        // Ignoruj kolizję gracza i przedmiotu
         Collider playerCol = GetComponent<Collider>();
         Collider itemCol = item.GetComponent<Collider>();
         if (playerCol && itemCol)
             Physics.IgnoreCollision(playerCol, itemCol, true);
 
-        // Teraz nadaj InputAuthority temu obiektowi
-        if (Runner != null && item != null)
-        {
-            // Zmieniamy właściciela
-            item.AssignInputAuthority(Object.InputAuthority);
-        }
+        // ❌ USUŃ: item.AssignInputAuthority(Object.InputAuthority);
     }
-
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_DropItem(NetworkObject itemObj, Vector3 pos, Quaternion rot)
