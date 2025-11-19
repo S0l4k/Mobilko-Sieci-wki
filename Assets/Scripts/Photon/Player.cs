@@ -11,6 +11,7 @@ public class Player : NetworkBehaviour
 
     private Vector3 _forward;
     private NetworkCharacterController _cc;
+    private NetworkButtons _previousButtons;
 
     private void Awake()
     {
@@ -28,18 +29,22 @@ public class Player : NetworkBehaviour
             if (data.direction.sqrMagnitude > 0)
                 _forward = data.direction;
 
-            if (Object.HasInputAuthority && data.buttons.IsSet(NetworkInputData.INTERACT))
-                TryInteract();
-        }
+            bool interactPressed =
+                data.buttons.WasPressed(_previousButtons, NetworkInputData.INTERACT);
 
+            if (Object.HasInputAuthority && interactPressed)
+                TryInteract();
+
+            _previousButtons = data.buttons;
+        }
 
         if (HeldItem != null && Object.HasStateAuthority)
         {
             HeldItem.transform.position = holdPoint.position;
             HeldItem.transform.rotation = holdPoint.rotation;
         }
-
     }
+
 
     private void TryInteract()
     {

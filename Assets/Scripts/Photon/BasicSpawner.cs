@@ -68,7 +68,7 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
         _mouseButton0 = false;
         data.buttons.Set(NetworkInputData.MOUSEBUTTON1, _mouseButton1);
         _mouseButton1 = false;
-        data.buttons.Set(NetworkInputData.INTERACT, Input.GetKeyDown(KeyCode.E));
+        data.buttons.Set(NetworkInputData.INTERACT, Input.GetKey(KeyCode.E));
 
 
 
