@@ -7,10 +7,11 @@ public class Player : NetworkBehaviour
 
     [SerializeField] private Transform holdPoint;
     [SerializeField] private float interactRange = 2f;
-    [SerializeField] private float interactHeight = 1.5f;
+    [SerializeField] private float interactHeight = 1.2f;
 
     private Vector3 _forward;
     private NetworkCharacterController _cc;
+
     private NetworkButtons _previousButtons;
 
     private void Awake()
@@ -49,7 +50,8 @@ public class Player : NetworkBehaviour
     private void TryInteract()
     {
         Vector3 start = transform.position + Vector3.up * interactHeight;
-        Collider[] hits = Physics.OverlapSphere(start + _forward * interactRange, 0.5f);
+
+        Collider[] hits = Physics.OverlapSphere(start + _forward * interactRange, 0.4f);
 
         foreach (var hit in hits)
         {
@@ -63,26 +65,32 @@ public class Player : NetworkBehaviour
 
                 interactable.Interact(this);
 
-                if (interactable.CanBePickedUp && hit.TryGetComponent(out NetworkObject netObj))
+                // PICKUP (KitchenItem or anything with CanBePickedUp=true)
+                if (interactable.CanBePickedUp)
                 {
-                    RPC_Pickup(netObj);
-                    return;
+                    NetworkObject netObj = hit.GetComponentInParent<NetworkObject>();
+                    if (netObj != null)
+                    {
+                        RPC_Pickup(netObj);
+                        return;
+                    }
+
+                    Debug.LogWarning($"No NetworkObject found on {hit.name}");
                 }
             }
         }
     }
+
 
     public void Drop()
     {
         if (HeldItem == null) return;
 
         Vector3 origin = holdPoint.position;
-        float radius = 0.5f;
-        float distance = 2f;
 
-        if (Physics.SphereCast(origin, radius, _forward, out RaycastHit hit, distance))
+        if (Physics.SphereCast(origin, 0.5f, _forward, out RaycastHit hit, 1.5f))
         {
-            if (hit.collider.TryGetComponent<Table>(out Table table))
+            if (hit.collider.TryGetComponent<Table>(out var table))
             {
                 RPC_PlaceOnTable(table.Object, HeldItem);
                 return;
@@ -93,6 +101,9 @@ public class Player : NetworkBehaviour
         RPC_DropItem(HeldItem, dropPos, Quaternion.identity);
     }
 
+
+    // ------- RPCs ---------
+
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_Pickup(NetworkObject item)
     {
@@ -100,61 +111,52 @@ public class Player : NetworkBehaviour
 
         HeldItem = item;
 
-        Rigidbody rb = item.GetComponent<Rigidbody>();
-        if (rb != null)
+        if (item.TryGetComponent<Rigidbody>(out var rb))
         {
             rb.isKinematic = true;
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
-        Collider playerCol = GetComponent<Collider>();
-        Collider itemCol = item.GetComponent<Collider>();
-        if (playerCol && itemCol)
+        if (TryGetComponent(out Collider playerCol) &&
+            item.TryGetComponent(out Collider itemCol))
+        {
             Physics.IgnoreCollision(playerCol, itemCol, true);
-
-        // ❌ USUŃ: item.AssignInputAuthority(Object.InputAuthority);
+        }
     }
 
+
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void RPC_DropItem(NetworkObject itemObj, Vector3 pos, Quaternion rot)
+    public void RPC_DropItem(NetworkObject item, Vector3 pos, Quaternion rot)
     {
-        if (itemObj == null) return;
+        if (item == null) return;
 
-        Rigidbody rb = itemObj.GetComponent<Rigidbody>();
-        if (rb != null) rb.isKinematic = false;
+        if (item.TryGetComponent<Rigidbody>(out var rb))
+            rb.isKinematic = false;
 
-        itemObj.transform.position = pos;
-        itemObj.transform.rotation = rot;
+        item.transform.position = pos;
+        item.transform.rotation = rot;
 
-        Collider playerCol = GetComponent<Collider>();
-        Collider itemCol = itemObj.GetComponent<Collider>();
-        if (playerCol && itemCol)
+        if (TryGetComponent(out Collider playerCol) &&
+            item.TryGetComponent(out Collider itemCol))
+        {
             Physics.IgnoreCollision(playerCol, itemCol, false);
+        }
 
-        if (HeldItem == itemObj)
+        if (HeldItem == item)
             HeldItem = null;
     }
 
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    private void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject itemObj)
-    {
-        if (tableObj == null || itemObj == null) return;
 
-        Table table = tableObj.GetComponent<Table>();
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject item)
+    {
+        if (tableObj == null || item == null) return;
+
+        var table = tableObj.GetComponent<Table>();
         if (table == null || table.HeldItem != null) return;
 
-        table.ReceiveItem(itemObj);
+        table.ReceiveItem(item);
         HeldItem = null;
-
-        Rigidbody rb = itemObj.GetComponent<Rigidbody>();
-        if (rb != null) rb.isKinematic = true;
-    }
-
-    private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.yellow;
-        Vector3 start = transform.position + Vector3.up * interactHeight;
-        Gizmos.DrawWireSphere(start + _forward * interactRange, 0.4f);
     }
 }

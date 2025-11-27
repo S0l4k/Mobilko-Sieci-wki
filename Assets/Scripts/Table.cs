@@ -8,7 +8,7 @@ public class Table : NetworkBehaviour, IInteractable
 
     [SerializeField] private Transform placePoint;
 
-    public void Interact(Player player)
+    public virtual void Interact(Player player)
     {
         if (HeldItem != null && player.HeldItem == null)
         {
@@ -19,13 +19,21 @@ public class Table : NetworkBehaviour, IInteractable
 
     public void ReceiveItem(NetworkObject item)
     {
-        if (HeldItem != null || item == null) return;
+        if (item == null || HeldItem != null)
+            return;
 
         HeldItem = item;
-        item.transform.position = placePoint.position + Vector3.up * 0.05f;
+
+        item.transform.position = placePoint.position;
         item.transform.rotation = placePoint.rotation;
 
-        Rigidbody rb = item.GetComponent<Rigidbody>();
-        if (rb != null) rb.isKinematic = true;
+        if (item.TryGetComponent<Rigidbody>(out var rb))
+            rb.isKinematic = true;
+    }
+
+    public KitchenItem GetKitchenItem()
+    {
+        if (HeldItem == null) return null;
+        return HeldItem.GetComponent<KitchenItem>();
     }
 }
