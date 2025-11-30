@@ -3,51 +3,46 @@ using UnityEngine;
 
 public class PouringStation : Table
 {
-    [SerializeField] private ItemVariant liquidVariant;
-
     public override void Interact(Player player)
     {
-        // Jeśli gracz ma pustą rękę → NIE pozwalamy zabrać glassa (bo Table normalnie to robi)
-        if (player.HeldItem == null)
+        var heldKi = player.HeldItem?.GetComponent<KitchenItem>();
+        var tableKi = GetKitchenItem();
+
+        Debug.Log($"[PouringStation] Interact. Player held: {(heldKi != null ? heldKi.Variant.ToString() : "null")}, Table: {(tableKi != null ? tableKi.Variant.ToString() : "null")}");
+
+        // 1️⃣ Podnoszenie glassa
+        if (heldKi == null)
         {
-            Debug.Log("PouringStation: gracz nie trzyma płynu");
+            if (tableKi != null)
+            {
+                Debug.Log("[PouringStation] Podnoszenie glassa");
+                player.RPC_Pickup(tableKi.Object);
+                RemoveHeldItem();
+            }
             return;
         }
 
-        // Gracz trzyma płyn
-        if (!player.HeldItem.TryGetComponent<KitchenItem>(out var heldKi))
-            return;
-
-        // Na stole musi stać glass
-        var glassKi = GetKitchenItem();
-        if (glassKi == null)
+        // 2️⃣ Gracz trzyma przedmiot, ale to nie jest płyn → nic
+        if (!heldKi.IsLiquid())
         {
-            Debug.Log("PouringStation: na stole nie ma glass");
+            Debug.Log($"[PouringStation] Gracz nie trzyma płynu: {heldKi.Variant}");
             return;
         }
 
-        // Glass musi być pusty
-        if (glassKi.Variant != ItemVariant.EmptyGlass)
+        // 3️⃣ Nalewanie – musi być pusty glass
+        if (tableKi == null)
         {
-            Debug.Log("PouringStation: glass nie jest pusty");
+            Debug.Log("[PouringStation] Brak glassa na stole");
             return;
         }
 
-        Debug.Log("Nalewanie!");
+        if (tableKi.Variant != ItemVariant.EmptyGlass)
+        {
+            Debug.Log($"[PouringStation] Glass nie jest pusty: {tableKi.Variant}");
+            return;
+        }
 
-        RPC_PourLiquid(glassKi.Object, heldKi.Object);
-    }
-
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_PourLiquid(NetworkObject glassObj, NetworkObject liquidObj)
-    {
-        var glass = glassObj.GetComponent<KitchenItem>();
-        var liquid = liquidObj.GetComponent<KitchenItem>();
-
-        if (glass == null || liquid == null) return;
-
-        glass.Variant = liquid.Variant;
-
-        Runner.Despawn(liquidObj);
+        Debug.Log($"[PouringStation] Nalewanie {heldKi.Variant} do glassa");
+        player.RPC_PourLiquidToStation(tableKi.Object, heldKi.Object);
     }
 }

@@ -19,19 +19,14 @@ public enum ItemVariant
 
     Onion = 7,
     SlicedOnion = 8,
-
     Brain = 9,
     SlicedBrain = 10,
-
     Tojad = 11,
     SlicedTojad = 12,
-
     Pumpkin = 13,
     SlicedPumpkin = 14,
-
     Mandragora = 15,
     SlicedMandragora = 16,
-
     Eyes = 17,
     Fingers = 18,
     Worms = 19,
@@ -42,7 +37,7 @@ public enum ItemVariant
     Drink2 = 23,
     Drink3 = 24,
     Drink4 = 25,
-    Drink5 = 26
+    Drink5 = 31
 }
 
 public class KitchenItem : NetworkBehaviour, IInteractable
@@ -57,11 +52,19 @@ public class KitchenItem : NetworkBehaviour, IInteractable
 
     public bool Is(ItemVariant v) => Variant == v;
 
-    // ---- IInteractable ----
+    public bool IsLiquid()
+    {
+        return Variant == ItemVariant.Vodka ||
+               Variant == ItemVariant.Plazma ||
+               Variant == ItemVariant.Poison ||
+               Variant == ItemVariant.Blood ||
+               Variant == ItemVariant.Magma;
+    }
+
     public bool CanBePickedUp => true;
 
     public void Interact(Player player)
     {
-        // pickup logic handled by Player, so nothing needed here
+        // Pickup logic handled by Player
     }
 }

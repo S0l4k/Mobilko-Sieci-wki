@@ -13,8 +13,13 @@ public class Table : NetworkBehaviour, IInteractable
         if (HeldItem != null && player.HeldItem == null)
         {
             player.RPC_Pickup(HeldItem);
-            HeldItem = null;
+            RemoveHeldItem();
         }
+    }
+
+    public void RemoveHeldItem()
+    {
+        HeldItem = null;
     }
 
     public void ReceiveItem(NetworkObject item)
