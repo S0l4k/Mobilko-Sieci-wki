@@ -8,23 +8,32 @@ public class Player : NetworkBehaviour
     [SerializeField] private Transform holdPoint;
     [SerializeField] private float interactRange = 2f;
     [SerializeField] private float interactHeight = 1.2f;
+    [SerializeField] private float moveSpeed = 5f; // możesz zmienić
 
     private Vector3 _forward;
     private NetworkCharacterController _cc;
     private NetworkButtons _previousButtons;
 
+    // Interpolacja klienta
+    private Vector3 _interpPosition;
+    private Quaternion _interpRotation;
+
     private void Awake()
     {
         _cc = GetComponent<NetworkCharacterController>();
         _forward = transform.forward;
+
+        _interpPosition = transform.position;
+        _interpRotation = transform.rotation;
     }
 
     public override void FixedUpdateNetwork()
     {
+        // --- Ruch (InputAuthority) ---
         if (GetInput(out NetworkInputData data))
         {
             data.direction.Normalize();
-            _cc.Move(5 * data.direction * Runner.DeltaTime);
+            _cc.Move(moveSpeed * data.direction * Runner.DeltaTime);
 
             if (data.direction.sqrMagnitude > 0)
                 _forward = data.direction;
@@ -36,10 +45,27 @@ public class Player : NetworkBehaviour
             _previousButtons = data.buttons;
         }
 
+        // --- Host aktualizuje item ---
         if (HeldItem != null && Object.HasStateAuthority)
         {
             HeldItem.transform.position = holdPoint.position;
             HeldItem.transform.rotation = holdPoint.rotation;
+        }
+
+        // --- Interpolacja klienta (usuwanie drgań) ---
+        if (!Object.HasStateAuthority)
+        {
+            _interpPosition = Vector3.Lerp(_interpPosition, _cc.transform.position, 0.2f);
+            _interpRotation = Quaternion.Slerp(_interpRotation, Quaternion.LookRotation(_forward), 0.2f);
+
+            transform.position = _interpPosition;
+            transform.rotation = _interpRotation;
+        }
+        else
+        {
+            // host = od razu sync
+            _interpPosition = transform.position;
+            _interpRotation = transform.rotation;
         }
     }
 
@@ -56,7 +82,6 @@ public class Player : NetworkBehaviour
             if (HeldItem != null)
             {
                 var heldKi = HeldItem.GetComponent<KitchenItem>();
-
                 if (heldKi.IsLiquid() && interactable is PouringStation)
                 {
                     interactable.Interact(this);
@@ -79,12 +104,10 @@ public class Player : NetworkBehaviour
         }
     }
 
-
     public void Drop()
     {
         if (HeldItem == null) return;
 
-        // Spróbuj najpierw położyć na stół w zasięgu
         Collider[] colliders = Physics.OverlapSphere(transform.position + _forward, 1.5f);
         foreach (var col in colliders)
         {
@@ -95,11 +118,9 @@ public class Player : NetworkBehaviour
             }
         }
 
-        // Jeśli brak stołu → upuść w przód
         Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
         RPC_DropItem(HeldItem, dropPos, Quaternion.identity);
     }
-
 
     // ---------------- RPCs ----------------
 
@@ -118,9 +139,7 @@ public class Player : NetworkBehaviour
         }
 
         if (TryGetComponent(out Collider playerCol) && item.TryGetComponent(out Collider itemCol))
-        {
             Physics.IgnoreCollision(playerCol, itemCol, true);
-        }
 
         Debug.Log($"[Player] Podniesiono {item.name}");
     }
@@ -137,9 +156,7 @@ public class Player : NetworkBehaviour
         item.transform.rotation = rot;
 
         if (TryGetComponent(out Collider playerCol) && item.TryGetComponent(out Collider itemCol))
-        {
             Physics.IgnoreCollision(playerCol, itemCol, false);
-        }
 
         if (HeldItem == item)
             HeldItem = null;
@@ -164,11 +181,9 @@ public class Player : NetworkBehaviour
             }
         }
 
-        // fallback: zwykły drop w świecie
         Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
         RPC_DropItem(item, dropPos, Quaternion.identity);
     }
-
 
     // ---------------- Nalewanie RPC ----------------
 
