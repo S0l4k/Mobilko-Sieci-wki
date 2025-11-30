@@ -50,73 +50,56 @@ public class Player : NetworkBehaviour
 
         foreach (var hit in hits)
         {
-            if (HeldItem != null && hit.collider.gameObject == HeldItem.gameObject)
-                continue; // ignorujemy trzymany item
-
-            if (!hit.collider.TryGetComponent(out IInteractable interactable))
+            if (!hit.collider.TryGetComponent<IInteractable>(out var interactable))
                 continue;
 
-            var heldKi = HeldItem?.GetComponent<KitchenItem>();
-            var tableKi = (interactable as Table)?.GetKitchenItem();
-
-            // 1️⃣ Nalewanie (priorytet)
-            if (heldKi != null && heldKi.IsLiquid() && interactable is PouringStation)
-            {
-                if (tableKi != null && tableKi.Variant == ItemVariant.EmptyGlass)
-                {
-                    Debug.Log("[Player] Nalewanie płynu do glassa");
-                    interactable.Interact(this);
-                }
-                else
-                {
-                    Debug.Log("[Player] Brak pustego glassa na stole");
-                }
-                return;
-            }
-
-            // 2️⃣ Trzymamy coś innego → Drop
             if (HeldItem != null)
             {
+                var heldKi = HeldItem.GetComponent<KitchenItem>();
+
+                if (heldKi.IsLiquid() && interactable is PouringStation)
+                {
+                    interactable.Interact(this);
+                    return;
+                }
+
                 Drop();
                 return;
             }
 
-            // 3️⃣ Nic nie trzymamy → Pickup
             interactable.Interact(this);
+
             if (interactable.CanBePickedUp)
             {
                 NetworkObject netObj = hit.collider.GetComponentInParent<NetworkObject>();
-                if (netObj != null)
-                {
-                    RPC_Pickup(netObj);
-                }
-                else
-                {
-                    Debug.LogWarning($"[Player] No NetworkObject found on {hit.collider.name}");
-                }
+                if (netObj != null) RPC_Pickup(netObj);
             }
+
             return;
         }
     }
+
 
     public void Drop()
     {
         if (HeldItem == null) return;
 
-        Vector3 origin = holdPoint.position;
-
-        if (Physics.SphereCast(origin, 0.5f, _forward, out RaycastHit hit, 1.5f))
+        // Spróbuj najpierw położyć na stół w zasięgu
+        Collider[] colliders = Physics.OverlapSphere(transform.position + _forward, 1.5f);
+        foreach (var col in colliders)
         {
-            if (hit.collider.TryGetComponent<Table>(out var table))
+            if (col.TryGetComponent<Table>(out var table))
             {
                 RPC_PlaceOnTable(table.Object, HeldItem);
                 return;
             }
         }
 
+        // Jeśli brak stołu → upuść w przód
         Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
         RPC_DropItem(HeldItem, dropPos, Quaternion.identity);
     }
+
 
     // ---------------- RPCs ----------------
 
@@ -167,16 +150,25 @@ public class Player : NetworkBehaviour
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject item)
     {
-        if (tableObj == null || item == null) return;
+        if (item == null) return;
 
-        var table = tableObj.GetComponent<Table>();
-        if (table == null || table.HeldItem != null) return;
+        if (tableObj != null)
+        {
+            var table = tableObj.GetComponent<Table>();
+            if (table != null && table.HeldItem == null)
+            {
+                table.ReceiveItem(item);
+                HeldItem = null;
+                Debug.Log($"[Player] Odłożono {item.name} na stół {table.name}");
+                return;
+            }
+        }
 
-        table.ReceiveItem(item);
-        HeldItem = null;
-
-        Debug.Log($"[Player] Odłożono {item.name} na stół {table.name}");
+        // fallback: zwykły drop w świecie
+        Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
+        RPC_DropItem(item, dropPos, Quaternion.identity);
     }
+
 
     // ---------------- Nalewanie RPC ----------------
 
