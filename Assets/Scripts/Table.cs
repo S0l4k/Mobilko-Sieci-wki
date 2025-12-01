@@ -12,14 +12,21 @@ public class Table : NetworkBehaviour, IInteractable
     {
         if (HeldItem != null && player.HeldItem == null)
         {
+            // RPC do pickup, żeby klient i host mogli odebrać item
             player.RPC_Pickup(HeldItem);
-            RemoveHeldItem();
+
+            // Reset stanu stołu w sieci (StateAuthority)
+            if (Object.HasStateAuthority)
+            {
+                HeldItem = null;
+            }
         }
     }
 
     public void RemoveHeldItem()
     {
-        HeldItem = null;
+        if (Object.HasStateAuthority)
+            HeldItem = null;
     }
 
     public void ReceiveItem(NetworkObject item)
@@ -29,11 +36,16 @@ public class Table : NetworkBehaviour, IInteractable
 
         HeldItem = item;
 
-        item.transform.position = placePoint.position;
-        item.transform.rotation = placePoint.rotation;
+        if (placePoint != null)
+        {
+            item.transform.position = placePoint.position;
+            item.transform.rotation = placePoint.rotation;
+        }
 
         if (item.TryGetComponent<Rigidbody>(out var rb))
             rb.isKinematic = true;
+
+        Debug.Log($"[Table] ReceiveItem - {item.name} na {gameObject.name}");
     }
 
     public KitchenItem GetKitchenItem()
