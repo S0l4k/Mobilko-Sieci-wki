@@ -8,7 +8,7 @@ public class Player : NetworkBehaviour
     [SerializeField] private Transform holdPoint;
     [SerializeField] private float interactRange = 2f;
     [SerializeField] private float interactHeight = 1.2f;
-    [SerializeField] private float moveSpeed = 5f; // możesz zmienić
+    [SerializeField] private float moveSpeed = 5f;
 
     private Vector3 _forward;
     private NetworkCharacterController _cc;
@@ -33,7 +33,7 @@ public class Player : NetworkBehaviour
         if (GetInput(out NetworkInputData data))
         {
             data.direction.Normalize();
-            _cc.Move(moveSpeed * data.direction * Runner.DeltaTime);
+            _cc.Move(data.direction * moveSpeed * Runner.DeltaTime);
 
             if (data.direction.sqrMagnitude > 0)
                 _forward = data.direction;
@@ -63,46 +63,71 @@ public class Player : NetworkBehaviour
         }
         else
         {
-            // host = od razu sync
             _interpPosition = transform.position;
             _interpRotation = transform.rotation;
         }
     }
-
     private void TryInteract()
     {
         Vector3 start = transform.position + Vector3.up * interactHeight;
         RaycastHit[] hits = Physics.RaycastAll(start, _forward, interactRange);
+
+        Debug.Log($"[Player] RaycastAll trafienia: {hits.Length}");
+
+        // Filtrujemy tylko IInteractable
+        IInteractable pouringStationHit = null;
+        IInteractable firstInteractable = null;
 
         foreach (var hit in hits)
         {
             if (!hit.collider.TryGetComponent<IInteractable>(out var interactable))
                 continue;
 
-            if (HeldItem != null)
-            {
-                var heldKi = HeldItem.GetComponent<KitchenItem>();
-                if (heldKi.IsLiquid() && interactable is PouringStation)
-                {
-                    interactable.Interact(this);
-                    return;
-                }
+            if (firstInteractable == null)
+                firstInteractable = interactable;
 
-                Drop();
+            if (interactable is PouringStation)
+                pouringStationHit = interactable;
+        }
+
+        if (HeldItem != null)
+        {
+            var heldKi = HeldItem.GetComponent<KitchenItem>();
+
+            if (heldKi.IsLiquid() && pouringStationHit != null)
+            {
+                Debug.Log("[Player] Wykryto PouringStation z płynem w ręce!");
+                pouringStationHit.Interact(this);
                 return;
             }
 
-            interactable.Interact(this);
-
-            if (interactable.CanBePickedUp)
+            // Jeśli nie ma pouring station, używamy pierwszego interactable (drop/innne interakcje)
+            if (firstInteractable != null)
             {
-                NetworkObject netObj = hit.collider.GetComponentInParent<NetworkObject>();
-                if (netObj != null) RPC_Pickup(netObj);
+                Drop();
             }
-
             return;
         }
+
+        // Dla pustej ręki
+        if (pouringStationHit != null)
+        {
+            pouringStationHit.Interact(this);
+            return;
+        }
+
+        if (firstInteractable != null)
+        {
+            firstInteractable.Interact(this);
+
+            if (firstInteractable.CanBePickedUp)
+            {
+                NetworkObject netObj = firstInteractable is MonoBehaviour mb ? mb.GetComponentInParent<NetworkObject>() : null;
+                if (netObj != null) RPC_Pickup(netObj);
+            }
+        }
     }
+
 
     public void Drop()
     {
@@ -218,8 +243,7 @@ public class Player : NetworkBehaviour
 
     private void OnDrawGizmos()
     {
-        if (!Application.isPlaying)
-            return;
+        if (!Application.isPlaying) return;
 
         // Kolory
         Color rayColor = Color.yellow;
@@ -227,16 +251,13 @@ public class Player : NetworkBehaviour
 
         // --- RAYCAST INTERAKCJI ---
         Gizmos.color = rayColor;
-
         Vector3 start = transform.position + Vector3.up * interactHeight;
         Vector3 end = start + _forward.normalized * interactRange;
-
         Gizmos.DrawLine(start, end);
         Gizmos.DrawSphere(end, 0.05f);
 
         // --- SPRAWDZANIE STOŁÓW PRZY ODKŁADANIU ---
         Gizmos.color = sphereColor;
-
         Vector3 spherePos = transform.position + _forward;
         Gizmos.DrawSphere(spherePos, 1.5f);
 
@@ -247,6 +268,4 @@ public class Player : NetworkBehaviour
             Gizmos.DrawWireSphere(holdPoint.position, 0.1f);
         }
     }
-
-
 }

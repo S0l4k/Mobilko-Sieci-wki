@@ -81,7 +81,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _HeldItem: {fileID: 0}
-  holdPoint: {fileID: 0}
+  holdPoint: {fileID: 7290319011317140183}
   interactRange: 1.44
   interactHeight: -0.12
   moveSpeed: 10
@@ -143,11 +143,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _stateAuthorityChangeErrorCorrectionDelta: 0
-  gravity: -20
+  gravity: -24.28
   jumpImpulse: 8
   acceleration: 10
   braking: 10
-  maxSpeed: 2
+  maxSpeed: 6
   rotationSpeed: 15
 --- !u!1001 &1413316420431995618
 PrefabInstance:

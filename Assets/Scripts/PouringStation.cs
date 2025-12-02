@@ -10,7 +10,6 @@ public class PouringStation : Table
 
         Debug.Log($"[PouringStation] Interact. Player held: {(heldKi != null ? heldKi.Variant.ToString() : "null")}, Table: {(tableKi != null ? tableKi.Variant.ToString() : "null")}");
 
-        // 1️⃣ Podnoszenie glassa
         if (heldKi == null)
         {
             if (tableKi != null)
@@ -22,14 +21,12 @@ public class PouringStation : Table
             return;
         }
 
-        // 2️⃣ Gracz trzyma przedmiot, ale to nie jest płyn → nic
         if (!heldKi.IsLiquid())
         {
             Debug.Log($"[PouringStation] Gracz nie trzyma płynu: {heldKi.Variant}");
             return;
         }
 
-        // 3️⃣ Nalewanie – musi być pusty glass
         if (tableKi == null)
         {
             Debug.Log("[PouringStation] Brak glassa na stole");

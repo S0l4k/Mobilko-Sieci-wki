@@ -12,14 +12,9 @@ public class Table : NetworkBehaviour, IInteractable
     {
         if (HeldItem != null && player.HeldItem == null)
         {
-            // RPC do pickup, żeby klient i host mogli odebrać item
             player.RPC_Pickup(HeldItem);
-
-            // Reset stanu stołu w sieci (StateAuthority)
             if (Object.HasStateAuthority)
-            {
                 HeldItem = null;
-            }
         }
     }
 
@@ -31,8 +26,7 @@ public class Table : NetworkBehaviour, IInteractable
 
     public void ReceiveItem(NetworkObject item)
     {
-        if (item == null || HeldItem != null)
-            return;
+        if (item == null || HeldItem != null) return;
 
         HeldItem = item;
 
