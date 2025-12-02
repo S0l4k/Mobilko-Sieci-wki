@@ -215,4 +215,38 @@ public class Player : NetworkBehaviour
 
         Debug.Log($"[Player] Nalewanie zakończone: glass={glass.Variant}");
     }
+
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        // Kolory
+        Color rayColor = Color.yellow;
+        Color sphereColor = new Color(0f, 1f, 0f, 0.2f);
+
+        // --- RAYCAST INTERAKCJI ---
+        Gizmos.color = rayColor;
+
+        Vector3 start = transform.position + Vector3.up * interactHeight;
+        Vector3 end = start + _forward.normalized * interactRange;
+
+        Gizmos.DrawLine(start, end);
+        Gizmos.DrawSphere(end, 0.05f);
+
+        // --- SPRAWDZANIE STOŁÓW PRZY ODKŁADANIU ---
+        Gizmos.color = sphereColor;
+
+        Vector3 spherePos = transform.position + _forward;
+        Gizmos.DrawSphere(spherePos, 1.5f);
+
+        // --- PUNKT TRZYMANIA PRZEDMIOTU ---
+        if (holdPoint != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(holdPoint.position, 0.1f);
+        }
+    }
+
+
 }
