@@ -41,5 +41,7 @@ public class PouringStation : Table
 
         Debug.Log($"[PouringStation] Nalewanie {heldKi.Variant} do glassa");
         player.RPC_PourLiquidToStation(tableKi.Object, heldKi.Object);
+
+
     }
 }

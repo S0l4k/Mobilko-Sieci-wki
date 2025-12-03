@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 321857fe5d4d50242b6555ffde404ba6, type: 3}
+  m_Name: KitchenManager_SO
+  m_EditorClassIdentifier: 
+  variantMap:
+  - variant: 1
+    prefab:
+      RawGuidValue: 65eca33f8a55cfb4bb4df15f72e623ba
+  - variant: 26
+    prefab:
+      RawGuidValue: 64c9c5b60e4c4cd40bf8ebfc943b1e66
+  - variant: 27
+    prefab:
+      RawGuidValue: c8b0245efa436b24ca6157c37b4f612f
+  - variant: 28
+    prefab:
+      RawGuidValue: 5cedaf1ab3d7e1a479405eff2769871e
+  - variant: 29
+    prefab:
+      RawGuidValue: baca2ac778effe246ac286eb6cc5b1b1
+  - variant: 30
+    prefab:
+      RawGuidValue: 9e26930f880e8554f912e3266ad2e5b7
+  - variant: 2
+    prefab:
+      RawGuidValue: 8fe39edfcf5100749977d2257cfc00ab
+  - variant: 3
+    prefab:
+      RawGuidValue: 77a4155140bfad14b9f5d2f2bac9869f
+  - variant: 4
+    prefab:
+      RawGuidValue: 126eec6a36ad8f54b9eafad37b123412
+  - variant: 5
+    prefab:
+      RawGuidValue: 5903bc55790fe6d4982239c0aa22d934
+  - variant: 6
+    prefab:
+      RawGuidValue: 41fe698c11332664bb624815a052d7ae
+  - variant: 7
+    prefab:
+      RawGuidValue: 25d7ff76bf6ca164ca104816ad30ab3a
+  - variant: 8
+    prefab:
+      RawGuidValue: d26dc66313308404593c9d3fc2a066eb
+  - variant: 9
+    prefab:
+      RawGuidValue: 6b845361a07f3714582a184d26f6a7ad
+  - variant: 10
+    prefab:
+      RawGuidValue: 130f2044840536d44a88f6100b03cece
+  - variant: 11
+    prefab:
+      RawGuidValue: 3df208c2df0ede24baec9d8630b0ef54
+  - variant: 12
+    prefab:
+      RawGuidValue: 2fc984f3627178047ae3449fac2e4e31
+  - variant: 13
+    prefab:
+      RawGuidValue: d01731e438f2174429e0e68dad953706
+  - variant: 14
+    prefab:
+      RawGuidValue: 92f3265244226a44a9c672cf32a2b820
+  - variant: 15
+    prefab:
+      RawGuidValue: 8f2b91ccd9d8aeb4db4cdbc1ff801a11
+  - variant: 16
+    prefab:
+      RawGuidValue: a7db25ee9298e7045aff03f3ed23a2ca
+  - variant: 17
+    prefab:
+      RawGuidValue: 9b5b1e6ef0cfcc947b05685d1ea1e492
+  - variant: 18
+    prefab:
+      RawGuidValue: 273ea4e492696f4409c3245a7b1d6eb5
+  - variant: 19
+    prefab:
+      RawGuidValue: 884cda8d8528a1b4d85d9f52edc5bfee
+  - variant: 20
+    prefab:
+      RawGuidValue: 2cc4198551969f44982b9ebe034c54f6
+  - variant: 21
+    prefab:
+      RawGuidValue: 1dcbfed5df5cb5d4194d91360c5d8bc2
+  - variant: 21
+    prefab:
+      RawGuidValue: 0ec55dc5319c55447b19a4e4864ba6a8
+  - variant: 21
+    prefab:
+      RawGuidValue: a6489dec70fa554499203660a1503cca
+  - variant: 21
+    prefab:
+      RawGuidValue: 578b9e5d8e5cdad418d96b7b78f065ef
+  - variant: 21
+    prefab:
+      RawGuidValue: cebac136a32405b4698b21fe8baaf3cd
+  - variant: 21
+    prefab:
+      RawGuidValue: 5b2d29c88382c7845991f840914070ee

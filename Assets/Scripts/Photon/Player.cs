@@ -22,7 +22,6 @@ public class Player : NetworkBehaviour
     {
         _cc = GetComponent<NetworkCharacterController>();
         _forward = transform.forward;
-
         _interpPosition = transform.position;
         _interpRotation = transform.rotation;
     }
@@ -33,7 +32,7 @@ public class Player : NetworkBehaviour
         if (GetInput(out NetworkInputData data))
         {
             data.direction.Normalize();
-            _cc.Move(data.direction * moveSpeed * Runner.DeltaTime);
+            _cc.Move(moveSpeed * data.direction * Runner.DeltaTime);
 
             if (data.direction.sqrMagnitude > 0)
                 _forward = data.direction;
@@ -52,7 +51,7 @@ public class Player : NetworkBehaviour
             HeldItem.transform.rotation = holdPoint.rotation;
         }
 
-        // --- Interpolacja klienta (usuwanie drgań) ---
+        // --- Interpolacja klienta ---
         if (!Object.HasStateAuthority)
         {
             _interpPosition = Vector3.Lerp(_interpPosition, _cc.transform.position, 0.2f);
@@ -67,6 +66,7 @@ public class Player : NetworkBehaviour
             _interpRotation = transform.rotation;
         }
     }
+
     private void TryInteract()
     {
         Vector3 start = transform.position + Vector3.up * interactHeight;
@@ -74,60 +74,40 @@ public class Player : NetworkBehaviour
 
         Debug.Log($"[Player] RaycastAll trafienia: {hits.Length}");
 
-        // Filtrujemy tylko IInteractable
-        IInteractable pouringStationHit = null;
-        IInteractable firstInteractable = null;
-
         foreach (var hit in hits)
         {
             if (!hit.collider.TryGetComponent<IInteractable>(out var interactable))
                 continue;
 
-            if (firstInteractable == null)
-                firstInteractable = interactable;
-
-            if (interactable is PouringStation)
-                pouringStationHit = interactable;
-        }
-
-        if (HeldItem != null)
-        {
-            var heldKi = HeldItem.GetComponent<KitchenItem>();
-
-            if (heldKi.IsLiquid() && pouringStationHit != null)
+            // Gracz trzyma przedmiot
+            if (HeldItem != null)
             {
-                Debug.Log("[Player] Wykryto PouringStation z płynem w ręce!");
-                pouringStationHit.Interact(this);
+                var heldKi = HeldItem.GetComponent<KitchenItem>();
+
+                // Jeśli trzymany płyn i trafia w pouring station
+                if (heldKi != null && heldKi.IsLiquid() && interactable is PouringStation)
+                {
+                    Debug.Log("[Player] Wykryto PouringStation z płynem w ręce!");
+                    interactable.Interact(this);
+                    return;
+                }
+
+                Drop();
                 return;
             }
 
-            // Jeśli nie ma pouring station, używamy pierwszego interactable (drop/innne interakcje)
-            if (firstInteractable != null)
+            interactable.Interact(this);
+
+            if (interactable.CanBePickedUp)
             {
-                Drop();
+                NetworkObject netObj = hit.collider.GetComponentInParent<NetworkObject>();
+                if (netObj != null)
+                    RPC_Pickup(netObj);
             }
+
             return;
-        }
-
-        // Dla pustej ręki
-        if (pouringStationHit != null)
-        {
-            pouringStationHit.Interact(this);
-            return;
-        }
-
-        if (firstInteractable != null)
-        {
-            firstInteractable.Interact(this);
-
-            if (firstInteractable.CanBePickedUp)
-            {
-                NetworkObject netObj = firstInteractable is MonoBehaviour mb ? mb.GetComponentInParent<NetworkObject>() : null;
-                if (netObj != null) RPC_Pickup(netObj);
-            }
         }
     }
-
 
     public void Drop()
     {
@@ -215,8 +195,8 @@ public class Player : NetworkBehaviour
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_PourLiquidToStation(NetworkObject glassObj, NetworkObject liquidObj)
     {
-        var glass = glassObj.GetComponent<KitchenItem>();
-        var liquid = liquidObj.GetComponent<KitchenItem>();
+        var glass = glassObj?.GetComponent<KitchenItem>();
+        var liquid = liquidObj?.GetComponent<KitchenItem>();
         if (glass == null || liquid == null) return;
 
         Debug.Log($"[Player] Nalewanie: glass={glass.Variant}, liquid={liquid.Variant}");
@@ -243,7 +223,8 @@ public class Player : NetworkBehaviour
 
     private void OnDrawGizmos()
     {
-        if (!Application.isPlaying) return;
+        if (!Application.isPlaying)
+            return;
 
         // Kolory
         Color rayColor = Color.yellow;
