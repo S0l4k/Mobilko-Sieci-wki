@@ -13,7 +13,6 @@ public class MixerTable : Table
         var heldKi = player.HeldItem?.GetComponent<KitchenItem>();
         var tableKi = GetKitchenItem();
 
-        // --- Gracz nic nie trzyma → podnieś szklankę/drink ze stołu ---
         if (heldKi == null)
         {
             if (tableKi != null && IsGlass(tableKi.Variant))
@@ -27,7 +26,6 @@ public class MixerTable : Table
             return;
         }
 
-        // --- Gracz trzyma szklankę i stół pusty → połóż szklankę ---
         if (IsGlass(heldKi.Variant) && tableKi == null)
         {
             player.RPC_PlaceOnTable(Object, heldKi.Object);
@@ -35,7 +33,6 @@ public class MixerTable : Table
             return;
         }
 
-        // --- Gracz trzyma składnik/pocięty item → dodaj do szklanki na stole ---
         if (tableKi != null && IsGlass(tableKi.Variant) && IsValidIngredient(heldKi.Variant))
         {
             int ingredientId = (int)heldKi.Variant;
@@ -46,14 +43,12 @@ public class MixerTable : Table
                 UpdateIngredientString();
                 Debug.Log($"[MixerTable] Dodano składnik: {heldKi.Variant}");
 
-                Runner.Despawn(heldKi.Object); // usuń składnik
+                Runner.Despawn(heldKi.Object);
                 player.ClearHeldItem();
             }
 
-            // Spróbuj zrobić drink
             bool drinkCreated = TryMakeDrink(tableKi);
 
-            // Jeśli drink został stworzony, pozwól od razu go podnieść
             if (drinkCreated)
             {
                 player.RPC_Pickup(tableKi.Object);
@@ -147,10 +142,10 @@ public class MixerTable : Table
             currentIngredients.Clear();
             ingredientString = "";
             Debug.Log($"[MixerTable] Stworzono drink: {result}");
-            return true; // drink stworzony
+            return true;
         }
 
-        return false; // brak drinka
+        return false;
     }
 
     public override void ReceiveItem(NetworkObject item)

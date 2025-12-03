@@ -85,7 +85,7 @@ MonoBehaviour:
   interactRange: 1.44
   interactHeight: -0.11
   moveSpeed: 10
-  animator: {fileID: 2764555754298582473}
+  animator: {fileID: 0}
 --- !u!114 &4049680558225021340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -215,11 +215,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: cb8178a17003be444bd7e12e8a4147b1, type: 3}
---- !u!95 &2764555754298582473 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: cb8178a17003be444bd7e12e8a4147b1, type: 3}
-  m_PrefabInstance: {fileID: 8590397925748250712}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8123790157200981939 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: cb8178a17003be444bd7e12e8a4147b1, type: 3}

@@ -9,7 +9,7 @@ public class Player : NetworkBehaviour
     [SerializeField] private float interactRange = 2f;
     [SerializeField] private float interactHeight = 1.2f;
     [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private Animator animator;
+
 
     private Vector3 _forward;
     private NetworkCharacterController _cc;
@@ -50,8 +50,6 @@ public class Player : NetworkBehaviour
              
             }
             float speed = moveDir.magnitude;
-            animator.SetFloat("Speed", speed);
-
             // ---------------- INTERACT ----------------
             bool interactPressed = data.buttons.WasPressed(_previousButtons, NetworkInputData.INTERACT) || data.interact;
             if (Object.HasInputAuthority && interactPressed)
