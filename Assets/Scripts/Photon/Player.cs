@@ -9,6 +9,7 @@ public class Player : NetworkBehaviour
     [SerializeField] private float interactRange = 2f;
     [SerializeField] private float interactHeight = 1.2f;
     [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private Animator animator;
 
     private Vector3 _forward;
     private NetworkCharacterController _cc;
@@ -31,29 +32,42 @@ public class Player : NetworkBehaviour
     {
         if (GetInput(out NetworkInputData data))
         {
-            // Ruch
-            data.direction.Normalize();
-            _cc.Move(moveSpeed * data.direction * Runner.DeltaTime);
+            // ---------------- RUCH ----------------
+            Vector3 moveDir = Vector3.zero;
 
-            if (data.direction.sqrMagnitude > 0)
-                _forward = data.direction;
+            // PC: WASD
+            moveDir += data.direction;
 
-            // Interact
-            bool interactPressed = data.buttons.WasPressed(_previousButtons, NetworkInputData.INTERACT);
+            // Mobile: joystick
+            moveDir += new Vector3(data.mobileDirection.x, 0f, data.mobileDirection.y);
+
+            if (moveDir.sqrMagnitude > 0f)
+            {
+                moveDir.Normalize();
+                _cc.Move(moveSpeed * moveDir * Runner.DeltaTime);
+                _forward = moveDir;
+                // Aktualizacja animacji
+             
+            }
+            float speed = moveDir.magnitude;
+            animator.SetFloat("Speed", speed);
+
+            // ---------------- INTERACT ----------------
+            bool interactPressed = data.buttons.WasPressed(_previousButtons, NetworkInputData.INTERACT) || data.interact;
             if (Object.HasInputAuthority && interactPressed)
                 TryInteract();
 
             _previousButtons = data.buttons;
         }
 
-        // Trzymany item – tylko serwer ustawia pozycję
+        // ---------------- TRZYMANE PRZEDMIOTY (SERVER) ----------------
         if (HeldItem != null && Object.HasStateAuthority)
         {
             HeldItem.transform.position = holdPoint.position;
             HeldItem.transform.rotation = holdPoint.rotation;
         }
 
-        // Interpolacja dla clienta
+        // ---------------- INTERPOLACJA CLIENT ----------------
         if (!Object.HasStateAuthority)
         {
             _interpPosition = Vector3.Lerp(_interpPosition, _cc.transform.position, 0.2f);
@@ -156,7 +170,7 @@ public class Player : NetworkBehaviour
     }
 
     // ---------------- POURING LIQUID ----------------
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_PourLiquidToStation(NetworkObject glassObj, NetworkObject liquidObj)
     {
         var glass = glassObj?.GetComponent<KitchenItem>();
@@ -175,13 +189,12 @@ public class Player : NetworkBehaviour
 
         Runner.Despawn(liquidObj);
 
-        // aktualizacja stołu
         var table = glassObj.GetComponentInParent<PouringStation>();
         table?.ReceiveItem(glassObj);
     }
 
     // ---------------- PLACE ON TABLE ----------------
-    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject item)
     {
         if (item == null || tableObj == null) return;
@@ -204,4 +217,24 @@ public class Player : NetworkBehaviour
     {
         HeldItem = null;
     }
+    private void OnDrawGizmosSelected()
+    {
+        // Kolor zasięgu interakcji
+        Gizmos.color = Color.yellow;
+        Vector3 start = transform.position + Vector3.up * interactHeight;
+        Gizmos.DrawLine(start, start + _forward * interactRange);
+        Gizmos.DrawWireSphere(start + _forward * interactRange, 0.2f);
+
+        // Kierunek patrzenia
+        Gizmos.color = Color.blue;
+        Gizmos.DrawLine(transform.position, transform.position + _forward);
+
+        // Hold point
+        if (holdPoint != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawSphere(holdPoint.position, 0.1f);
+        }
+    }
 }
+
