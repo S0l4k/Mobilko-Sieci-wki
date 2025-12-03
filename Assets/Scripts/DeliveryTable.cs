@@ -4,18 +4,23 @@ using TMPro;
 
 public class DeliveryTable : Table
 {
+    [Header("UI")]
     [SerializeField] private TextMeshProUGUI uiText;
 
+    // Fusion 1.x — brak OnChanged
     [Networked] private int requiredDrink { get; set; }
     [Networked] private int playerScore { get; set; }
 
     public override void Spawned()
     {
+        // Serwer ustawia wymagany drink
         if (Object.HasStateAuthority)
         {
             SetNewRequiredDrink();
-            RPC_UpdateUI(requiredDrink, playerScore); // 🔹 aktualizujemy UI od razu
         }
+
+        // Klienci sami aktualizują UI z networked zmiennych
+        UpdateUI();
     }
 
     public override void Interact(Player player)
@@ -31,29 +36,27 @@ public class DeliveryTable : Table
 
         int drinkNumber = GetDrinkNumber(heldKi.Variant);
 
-        if (drinkNumber == requiredDrink)
-        {
-            playerScore += 10;
-            Debug.Log($"[DeliveryTable] Poprawny drink! +10 punktów. Suma: {playerScore}");
-        }
-        else
-        {
-            playerScore -= 10;
-            Debug.Log($"[DeliveryTable] Zły drink! -10 punktów. Suma: {playerScore}");
-        }
-
-        // 🔹 Despawnujemy drink po oddaniu
         if (Object.HasStateAuthority)
         {
+            if (drinkNumber == requiredDrink)
+            {
+                playerScore += 10;
+            }
+            else
+            {
+                playerScore -= 10;
+            }
+
+            // usuń drink
             Runner.Despawn(player.HeldItem);
-        }
 
-        player.ClearHeldItem();
+            // gracz już nic nie trzyma
+            player.ClearHeldItem();
 
-        // Serwer ustawia nowy wymagany drink i informuje wszystkich
-        if (Object.HasStateAuthority)
-        {
+            // nowe zlecenie
             SetNewRequiredDrink();
+
+            // aktualizacja UI u wszystkich klientów
             RPC_UpdateUI(requiredDrink, playerScore);
         }
     }
@@ -85,12 +88,30 @@ public class DeliveryTable : Table
         requiredDrink = Random.Range(1, 6);
     }
 
+    // 🔹 aktualizacja UI u wszystkich
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_UpdateUI(int drink, int score)
     {
         if (uiText != null)
         {
             uiText.text = $"Wymagany drink: {drink}\nPunkty: {score}";
+        }
+    }
+
+    // 🔹 Klienci odświeżają UI na podstawie networked pól
+    public override void FixedUpdateNetwork()
+    {
+        if (!Object.HasStateAuthority)
+        {
+            UpdateUI();
+        }
+    }
+
+    private void UpdateUI()
+    {
+        if (uiText != null)
+        {
+            uiText.text = $"Wymagany drink: {requiredDrink}\nPunkty: {playerScore}";
         }
     }
 }

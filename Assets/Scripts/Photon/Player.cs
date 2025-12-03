@@ -21,20 +21,24 @@ public class Player : NetworkBehaviour
     {
         _cc = GetComponent<NetworkCharacterController>();
         _forward = transform.forward;
+
         _interpPosition = transform.position;
         _interpRotation = transform.rotation;
     }
 
+    // ---------------- NETWORK UPDATE ----------------
     public override void FixedUpdateNetwork()
     {
         if (GetInput(out NetworkInputData data))
         {
+            // Ruch
             data.direction.Normalize();
             _cc.Move(moveSpeed * data.direction * Runner.DeltaTime);
 
             if (data.direction.sqrMagnitude > 0)
                 _forward = data.direction;
 
+            // Interact
             bool interactPressed = data.buttons.WasPressed(_previousButtons, NetworkInputData.INTERACT);
             if (Object.HasInputAuthority && interactPressed)
                 TryInteract();
@@ -42,12 +46,14 @@ public class Player : NetworkBehaviour
             _previousButtons = data.buttons;
         }
 
+        // Trzymany item – tylko serwer ustawia pozycję
         if (HeldItem != null && Object.HasStateAuthority)
         {
             HeldItem.transform.position = holdPoint.position;
             HeldItem.transform.rotation = holdPoint.rotation;
         }
 
+        // Interpolacja dla clienta
         if (!Object.HasStateAuthority)
         {
             _interpPosition = Vector3.Lerp(_interpPosition, _cc.transform.position, 0.2f);
@@ -63,63 +69,44 @@ public class Player : NetworkBehaviour
         }
     }
 
-    // ---------------- Player.cs ----------------
+    // ---------------- CLIENT SIDE INTERACT ----------------
     private void TryInteract()
     {
         Vector3 start = transform.position + Vector3.up * interactHeight;
-        RaycastHit[] hits = Physics.RaycastAll(start, _forward, interactRange);
+        if (!Physics.Raycast(start, _forward, out var hit, interactRange))
+            return;
 
-        foreach (var hit in hits)
+        if (hit.collider.TryGetComponent<NetworkObject>(out var obj))
         {
-            // 🔹 Podnoszenie przedmiotów z ziemi
-            if (hit.collider.TryGetComponent<KitchenItem>(out var kitchenItem))
-            {
-                if (kitchenItem.CanBePickedUp && kitchenItem.TryGetComponent(out NetworkObject netObj))
-                {
-                    RPC_Pickup(netObj);
-                    return;
-                }
-            }
-
-            // 🔹 Interakcja ze stołami
-            if (hit.collider.TryGetComponent<IInteractable>(out var interactable))
-            {
-                // specjalny przypadek CuttingTable
-                if (interactable is CuttingTable cuttingTable)
-                {
-                    cuttingTable.Interact(this);
-                }
-                else
-                {
-                    interactable.Interact(this);
-                }
-                return;
-            }
+            RPC_RequestInteract(obj);
         }
     }
 
-
-    public void Drop()
+    // ---------------- SERVER-SIDE INTERACT LOGIC ----------------
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    private void RPC_RequestInteract(NetworkObject obj)
     {
-        if (HeldItem == null) return;
+        if (obj == null) return;
 
-        Collider[] colliders = Physics.OverlapSphere(transform.position + _forward, 1.5f);
-        foreach (var col in colliders)
+        // 1) Przedmiot na ziemi
+        if (obj.TryGetComponent<KitchenItem>(out var item))
         {
-            if (col.TryGetComponent<Table>(out var table))
+            if (item.CanBePickedUp)
             {
-                RPC_PlaceOnTable(table.Object, HeldItem);
+                RPC_Pickup(obj);
                 return;
             }
         }
 
-        Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
-        RPC_DropItem(HeldItem, dropPos, Quaternion.identity);
+        // 2) Interact z IInteractable (stoły, urządzenia itd.)
+        if (obj.TryGetComponent<IInteractable>(out var interactable))
+        {
+            interactable.Interact(this);
+        }
     }
 
-    // ---------------- RPCs ----------------
-
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    // ---------------- PICKUP ----------------
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_Pickup(NetworkObject item)
     {
         if (HeldItem != null || item == null) return;
@@ -133,13 +120,22 @@ public class Player : NetworkBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        if (TryGetComponent(out Collider playerCol) && item.TryGetComponent(out Collider itemCol))
-            Physics.IgnoreCollision(playerCol, itemCol, true);
+        if (TryGetComponent(out Collider pCol) && item.TryGetComponent(out Collider iCol))
+            Physics.IgnoreCollision(pCol, iCol, true);
 
         Debug.Log($"[Player] Podniesiono {item.name}");
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    // ---------------- DROP ----------------
+    public void Drop()
+    {
+        if (HeldItem == null) return;
+
+        Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
+        RPC_DropItem(HeldItem, dropPos, Quaternion.identity);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_DropItem(NetworkObject item, Vector3 pos, Quaternion rot)
     {
         if (item == null) return;
@@ -150,22 +146,22 @@ public class Player : NetworkBehaviour
         item.transform.position = pos;
         item.transform.rotation = rot;
 
-        if (TryGetComponent(out Collider playerCol) && item.TryGetComponent(out Collider itemCol))
-            Physics.IgnoreCollision(playerCol, itemCol, false);
+        if (TryGetComponent(out Collider pCol) && item.TryGetComponent(out Collider iCol))
+            Physics.IgnoreCollision(pCol, iCol, false);
 
         if (HeldItem == item)
             HeldItem = null;
 
         Debug.Log($"[Player] Upuszczono {item.name}");
     }
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+
+    // ---------------- POURING LIQUID ----------------
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_PourLiquidToStation(NetworkObject glassObj, NetworkObject liquidObj)
     {
         var glass = glassObj?.GetComponent<KitchenItem>();
         var liquid = liquidObj?.GetComponent<KitchenItem>();
         if (glass == null || liquid == null) return;
-
-        Debug.Log($"[Player] Nalewanie: glass={glass.Variant}, liquid={liquid.Variant}");
 
         switch (liquid.Variant)
         {
@@ -174,42 +170,38 @@ public class Player : NetworkBehaviour
             case ItemVariant.Poison: glass.Variant = ItemVariant.GlassWithPoison; break;
             case ItemVariant.Blood: glass.Variant = ItemVariant.GlassWithBlood; break;
             case ItemVariant.Magma: glass.Variant = ItemVariant.GlassWithMagma; break;
-            default:
-                Debug.LogWarning($"[Player] Nieznany płyn: {liquid.Variant}");
-                return;
+            default: return;
         }
 
         Runner.Despawn(liquidObj);
 
+        // aktualizacja stołu
         var table = glassObj.GetComponentInParent<PouringStation>();
         table?.ReceiveItem(glassObj);
-
-        Debug.Log($"[Player] Nalewanie zakończone: glass={glass.Variant}");
     }
 
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    // ---------------- PLACE ON TABLE ----------------
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject item)
     {
-        if (item == null) return;
+        if (item == null || tableObj == null) return;
 
-        if (tableObj != null)
+        var table = tableObj.GetComponent<Table>();
+        if (table != null && table.HeldItem == null)
         {
-            var table = tableObj.GetComponent<Table>();
-            if (table != null && table.HeldItem == null)
-            {
-                table.ReceiveItem(item);
-                HeldItem = null;
-                Debug.Log($"[Player] Odłożono {item.name} na stół {table.name}");
-                return;
-            }
+            table.ReceiveItem(item);
+            HeldItem = null;
+            Debug.Log($"[Player] Odłożono {item.name} na {table.name}");
+            return;
         }
 
-        Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
+        // Nie udało się — drop
+        Vector3 dropPos = transform.position + _forward + Vector3.up * 0.3f;
         RPC_DropItem(item, dropPos, Quaternion.identity);
     }
+
     public void ClearHeldItem()
     {
         HeldItem = null;
     }
-
 }
