@@ -14,7 +14,6 @@ public class Player : NetworkBehaviour
     private NetworkCharacterController _cc;
     private NetworkButtons _previousButtons;
 
-    // Interpolacja klienta
     private Vector3 _interpPosition;
     private Quaternion _interpRotation;
 
@@ -28,7 +27,6 @@ public class Player : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
-        // --- Ruch (InputAuthority) ---
         if (GetInput(out NetworkInputData data))
         {
             data.direction.Normalize();
@@ -44,14 +42,12 @@ public class Player : NetworkBehaviour
             _previousButtons = data.buttons;
         }
 
-        // --- Host aktualizuje item ---
         if (HeldItem != null && Object.HasStateAuthority)
         {
             HeldItem.transform.position = holdPoint.position;
             HeldItem.transform.rotation = holdPoint.rotation;
         }
 
-        // --- Interpolacja klienta ---
         if (!Object.HasStateAuthority)
         {
             _interpPosition = Vector3.Lerp(_interpPosition, _cc.transform.position, 0.2f);
@@ -67,47 +63,41 @@ public class Player : NetworkBehaviour
         }
     }
 
+    // ---------------- Player.cs ----------------
     private void TryInteract()
     {
         Vector3 start = transform.position + Vector3.up * interactHeight;
         RaycastHit[] hits = Physics.RaycastAll(start, _forward, interactRange);
 
-        Debug.Log($"[Player] RaycastAll trafienia: {hits.Length}");
-
         foreach (var hit in hits)
         {
-            if (!hit.collider.TryGetComponent<IInteractable>(out var interactable))
-                continue;
-
-            // Gracz trzyma przedmiot
-            if (HeldItem != null)
+            // 🔹 Podnoszenie przedmiotów z ziemi
+            if (hit.collider.TryGetComponent<KitchenItem>(out var kitchenItem))
             {
-                var heldKi = HeldItem.GetComponent<KitchenItem>();
-
-                // Jeśli trzymany płyn i trafia w pouring station
-                if (heldKi != null && heldKi.IsLiquid() && interactable is PouringStation)
+                if (kitchenItem.CanBePickedUp && kitchenItem.TryGetComponent(out NetworkObject netObj))
                 {
-                    Debug.Log("[Player] Wykryto PouringStation z płynem w ręce!");
-                    interactable.Interact(this);
+                    RPC_Pickup(netObj);
                     return;
                 }
+            }
 
-                Drop();
+            // 🔹 Interakcja ze stołami
+            if (hit.collider.TryGetComponent<IInteractable>(out var interactable))
+            {
+                // specjalny przypadek CuttingTable
+                if (interactable is CuttingTable cuttingTable)
+                {
+                    cuttingTable.Interact(this);
+                }
+                else
+                {
+                    interactable.Interact(this);
+                }
                 return;
             }
-
-            interactable.Interact(this);
-
-            if (interactable.CanBePickedUp)
-            {
-                NetworkObject netObj = hit.collider.GetComponentInParent<NetworkObject>();
-                if (netObj != null)
-                    RPC_Pickup(netObj);
-            }
-
-            return;
         }
     }
+
 
     public void Drop()
     {
@@ -168,30 +158,6 @@ public class Player : NetworkBehaviour
 
         Debug.Log($"[Player] Upuszczono {item.name}");
     }
-
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    private void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject item)
-    {
-        if (item == null) return;
-
-        if (tableObj != null)
-        {
-            var table = tableObj.GetComponent<Table>();
-            if (table != null && table.HeldItem == null)
-            {
-                table.ReceiveItem(item);
-                HeldItem = null;
-                Debug.Log($"[Player] Odłożono {item.name} na stół {table.name}");
-                return;
-            }
-        }
-
-        Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
-        RPC_DropItem(item, dropPos, Quaternion.identity);
-    }
-
-    // ---------------- Nalewanie RPC ----------------
-
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_PourLiquidToStation(NetworkObject glassObj, NetworkObject liquidObj)
     {
@@ -221,32 +187,24 @@ public class Player : NetworkBehaviour
         Debug.Log($"[Player] Nalewanie zakończone: glass={glass.Variant}");
     }
 
-    private void OnDrawGizmos()
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    public void RPC_PlaceOnTable(NetworkObject tableObj, NetworkObject item)
     {
-        if (!Application.isPlaying)
-            return;
+        if (item == null) return;
 
-        // Kolory
-        Color rayColor = Color.yellow;
-        Color sphereColor = new Color(0f, 1f, 0f, 0.2f);
-
-        // --- RAYCAST INTERAKCJI ---
-        Gizmos.color = rayColor;
-        Vector3 start = transform.position + Vector3.up * interactHeight;
-        Vector3 end = start + _forward.normalized * interactRange;
-        Gizmos.DrawLine(start, end);
-        Gizmos.DrawSphere(end, 0.05f);
-
-        // --- SPRAWDZANIE STOŁÓW PRZY ODKŁADANIU ---
-        Gizmos.color = sphereColor;
-        Vector3 spherePos = transform.position + _forward;
-        Gizmos.DrawSphere(spherePos, 1.5f);
-
-        // --- PUNKT TRZYMANIA PRZEDMIOTU ---
-        if (holdPoint != null)
+        if (tableObj != null)
         {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(holdPoint.position, 0.1f);
+            var table = tableObj.GetComponent<Table>();
+            if (table != null && table.HeldItem == null)
+            {
+                table.ReceiveItem(item);
+                HeldItem = null;
+                Debug.Log($"[Player] Odłożono {item.name} na stół {table.name}");
+                return;
+            }
         }
+
+        Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
+        RPC_DropItem(item, dropPos, Quaternion.identity);
     }
 }

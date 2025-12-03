@@ -4,6 +4,8 @@ using UnityEngine;
 public class KitchenItem : NetworkBehaviour, IInteractable
 {
     [Networked] public int VariantInt { get; set; }
+    [SerializeField] private ItemVariant initialVariant = ItemVariant.None;
+
 
     public ItemVariant Variant
     {
@@ -28,9 +30,33 @@ public class KitchenItem : NetworkBehaviour, IInteractable
     [SerializeField] private GameObject drink4;
     [SerializeField] private GameObject drink5;
 
+
+   
+
+    [Header("Cutting Models")]
+    [SerializeField] private GameObject onionModel;
+    [SerializeField] private GameObject slicedOnionModel;
+    [SerializeField] private GameObject brainModel;
+    [SerializeField] private GameObject slicedBrainModel;
+    [SerializeField] private GameObject tojadModel;
+    [SerializeField] private GameObject slicedTojadModel;
+    [SerializeField] private GameObject pumpkinModel;
+    [SerializeField] private GameObject slicedPumpkinModel;
+    [SerializeField] private GameObject mandragoraModel;
+    [SerializeField] private GameObject slicedMandragoraModel;
+
+    public override void Spawned()
+    {
+        base.Spawned();
+
+        if (Object.HasStateAuthority)
+        {
+            Variant = initialVariant;
+        }
+    }
     private void UpdateModel()
     {
-        // Wy³¹cz wszystkie
+        // Wy³¹cz wszystkie istniej¹ce modele
         emptyGlassModel.SetActive(false);
         glassWithVodkaModel.SetActive(false);
         glassWithPlazmaModel.SetActive(false);
@@ -43,7 +69,18 @@ public class KitchenItem : NetworkBehaviour, IInteractable
         drink4.SetActive(false);
         drink5.SetActive(false);
 
-        // W³¹cz tylko odpowiedni
+        onionModel.SetActive(false);
+        slicedOnionModel.SetActive(false);
+        brainModel.SetActive(false);
+        slicedBrainModel.SetActive(false);
+        tojadModel.SetActive(false);
+        slicedTojadModel.SetActive(false);
+        pumpkinModel.SetActive(false);
+        slicedPumpkinModel.SetActive(false);
+        mandragoraModel.SetActive(false);
+        slicedMandragoraModel.SetActive(false);
+
+        // W³¹cz odpowiedni model wg Variant
         switch (Variant)
         {
             case ItemVariant.EmptyGlass: emptyGlassModel.SetActive(true); break;
@@ -57,6 +94,18 @@ public class KitchenItem : NetworkBehaviour, IInteractable
             case ItemVariant.Drink3: drink3.SetActive(true); break;
             case ItemVariant.Drink4: drink4.SetActive(true); break;
             case ItemVariant.Drink5: drink5.SetActive(true); break;
+
+            // Cutting items
+            case ItemVariant.Onion: onionModel.SetActive(true); break;
+            case ItemVariant.SlicedOnion: slicedOnionModel.SetActive(true); break;
+            case ItemVariant.Brain: brainModel.SetActive(true); break;
+            case ItemVariant.SlicedBrain: slicedBrainModel.SetActive(true); break;
+            case ItemVariant.Tojad: tojadModel.SetActive(true); break;
+            case ItemVariant.SlicedTojad: slicedTojadModel.SetActive(true); break;
+            case ItemVariant.Pumpkin: pumpkinModel.SetActive(true); break;
+            case ItemVariant.SlicedPumpkin: slicedPumpkinModel.SetActive(true); break;
+            case ItemVariant.Mandragora: mandragoraModel.SetActive(true); break;
+            case ItemVariant.SlicedMandragora: slicedMandragoraModel.SetActive(true); break;
         }
     }
 

@@ -10,11 +10,20 @@ public class Table : NetworkBehaviour, IInteractable
 
     public virtual void Interact(Player player)
     {
-        if (HeldItem != null && player.HeldItem == null)
+        var heldKi = player.HeldItem?.GetComponent<KitchenItem>();
+        var tableKi = GetKitchenItem();
+
+        // jeśli stół ma przedmiot i gracz nic nie trzyma → podnieś
+        if (HeldItem != null && heldKi == null)
         {
             player.RPC_Pickup(HeldItem);
             if (Object.HasStateAuthority)
                 HeldItem = null;
+        }
+        // jeśli stół pusty i gracz trzyma coś → połóż
+        else if (HeldItem == null && heldKi != null)
+        {
+            player.RPC_PlaceOnTable(Object, player.HeldItem);
         }
     }
 
