@@ -207,4 +207,9 @@ public class Player : NetworkBehaviour
         Vector3 dropPos = transform.position + _forward * 1f + Vector3.up * 0.3f;
         RPC_DropItem(item, dropPos, Quaternion.identity);
     }
+    public void ClearHeldItem()
+    {
+        HeldItem = null;
+    }
+
 }

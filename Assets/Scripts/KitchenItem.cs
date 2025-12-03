@@ -117,6 +117,15 @@ public class KitchenItem : NetworkBehaviour, IInteractable
                Variant == ItemVariant.Blood ||
                Variant == ItemVariant.Magma;
     }
+    public bool IsGlass()
+    {
+        return Variant == ItemVariant.EmptyGlass ||
+               Variant == ItemVariant.GlassWithVodka ||
+               Variant == ItemVariant.GlassWithPlazma ||
+               Variant == ItemVariant.GlassWithPoison ||
+               Variant == ItemVariant.GlassWithBlood ||
+               Variant == ItemVariant.GlassWithMagma;
+    }
 
     public bool CanBePickedUp => true;
 

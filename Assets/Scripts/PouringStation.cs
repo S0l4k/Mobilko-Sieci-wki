@@ -8,40 +8,34 @@ public class PouringStation : Table
         var heldKi = player.HeldItem?.GetComponent<KitchenItem>();
         var tableKi = GetKitchenItem();
 
-        Debug.Log($"[PouringStation] Interact. Player held: {(heldKi != null ? heldKi.Variant.ToString() : "null")}, Table: {(tableKi != null ? tableKi.Variant.ToString() : "null")}");
-
-        if (heldKi == null)
+        // 1️⃣ Gracz trzyma płyn i stół ma EmptyGlass → nalewanie
+        if (heldKi != null && heldKi.IsLiquid() && tableKi != null && tableKi.Variant == ItemVariant.EmptyGlass)
         {
-            if (tableKi != null)
-            {
-                Debug.Log("[PouringStation] Podnoszenie glassa");
-                player.RPC_Pickup(tableKi.Object);
-                RemoveHeldItem();
-            }
+            player.RPC_PourLiquidToStation(tableKi.Object, heldKi.Object);
             return;
         }
 
-        if (!heldKi.IsLiquid())
+        // 2️⃣ Gracz nic nie trzyma → podnieś glass ze stołu
+        if (heldKi == null && tableKi != null && tableKi.IsGlass())
         {
-            Debug.Log($"[PouringStation] Gracz nie trzyma płynu: {heldKi.Variant}");
+            player.RPC_Pickup(tableKi.Object);
+            RemoveHeldItem();
             return;
         }
 
-        if (tableKi == null)
+        // 3️⃣ Gracz trzyma EmptyGlass → połóż na stole
+        if (heldKi != null && heldKi.Variant == ItemVariant.EmptyGlass && tableKi == null)
         {
-            Debug.Log("[PouringStation] Brak glassa na stole");
+            player.RPC_PlaceOnTable(Object, heldKi.Object);
             return;
         }
 
-        if (tableKi.Variant != ItemVariant.EmptyGlass)
-        {
-            Debug.Log($"[PouringStation] Glass nie jest pusty: {tableKi.Variant}");
-            return;
-        }
+        // Wszystko inne → nic nie rób
+        Debug.Log("[PouringStation] Brak możliwości interakcji");
+
 
         Debug.Log($"[PouringStation] Nalewanie {heldKi.Variant} do glassa");
         player.RPC_PourLiquidToStation(tableKi.Object, heldKi.Object);
-
-
     }
+
 }

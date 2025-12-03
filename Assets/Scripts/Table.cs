@@ -33,7 +33,7 @@ public class Table : NetworkBehaviour, IInteractable
             HeldItem = null;
     }
 
-    public void ReceiveItem(NetworkObject item)
+    public virtual void ReceiveItem(NetworkObject item)
     {
         if (item == null || HeldItem != null) return;
 
