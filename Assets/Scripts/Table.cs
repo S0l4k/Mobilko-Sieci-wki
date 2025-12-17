@@ -6,11 +6,11 @@ public class Table : NetworkBehaviour, IInteractable
     [Networked] public NetworkObject HeldItem { get; private set; }
     public bool CanBePickedUp => false;
 
-    [SerializeField] private Transform placePoint;
+    [SerializeField] protected Transform placePoint;
 
     public virtual void Interact(Player player)
     {
-        if (!Runner.IsServer) return; // <<< tylko serwer steruje logiką
+        if (!Runner.IsServer) return;
 
         var heldKi = player.HeldItem?.GetComponent<KitchenItem>();
         var tableKi = GetKitchenItem();
@@ -18,17 +18,16 @@ public class Table : NetworkBehaviour, IInteractable
         if (tableKi != null && heldKi == null)
         {
             player.RPC_Pickup(tableKi.Object);
-            HeldItem = null;
+            RemoveHeldItem();
             return;
         }
 
         if (tableKi == null && heldKi != null)
         {
-            player.RPC_PlaceOnTable(Object, player.HeldItem);
+            player.RPC_PlaceOnTable(Object, heldKi.Object);
             return;
         }
     }
-
 
     public void RemoveHeldItem()
     {

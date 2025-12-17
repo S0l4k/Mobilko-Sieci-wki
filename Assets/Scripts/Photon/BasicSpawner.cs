@@ -52,28 +52,32 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     {
         var data = new NetworkInputData();
 
-        if (Input.GetKey(KeyCode.W))
-            data.direction += Vector3.forward;
+        if (Application.isMobilePlatform)
+        {
+            data.direction = new Vector3(
+                MobileInputManager.Instance.GetJoystickDirection().x,
+                0f,
+                MobileInputManager.Instance.GetJoystickDirection().y
+            );
 
-        if (Input.GetKey(KeyCode.S))
-            data.direction += Vector3.back;
+            data.interact = MobileInputManager.Instance.interactPressed;
+            MobileInputManager.Instance.ResetInteract(); // reset po u¿yciu
+        }
+        else
+        {
+            if (Input.GetKey(KeyCode.W)) data.direction += Vector3.forward;
+            if (Input.GetKey(KeyCode.S)) data.direction += Vector3.back;
+            if (Input.GetKey(KeyCode.A)) data.direction += Vector3.left;
+            if (Input.GetKey(KeyCode.D)) data.direction += Vector3.right;
 
-        if (Input.GetKey(KeyCode.A))
-            data.direction += Vector3.left;
-
-        if (Input.GetKey(KeyCode.D))
-            data.direction += Vector3.right;
-
-        data.buttons.Set(NetworkInputData.MOUSEBUTTON0, _mouseButton0);
-        _mouseButton0 = false;
-        data.buttons.Set(NetworkInputData.MOUSEBUTTON1, _mouseButton1);
-        _mouseButton1 = false;
-        data.buttons.Set(NetworkInputData.INTERACT, Input.GetKey(KeyCode.E));
-
-
+            data.buttons.Set(NetworkInputData.INTERACT, Input.GetKey(KeyCode.E));
+        }
 
         input.Set(data);
+
     }
+
+
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason) { }
     public void OnConnectedToServer(NetworkRunner runner) { }

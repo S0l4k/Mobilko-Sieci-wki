@@ -11,7 +11,6 @@ public class CuttingTable : Table
         var heldKi = player.HeldItem?.GetComponent<KitchenItem>();
         var tableKi = GetKitchenItem();
 
-        // --- Stół ma przedmiot do krojenia ---
         if (tableKi != null && CanBeCut(tableKi.Variant))
         {
             _currentClicks++;
@@ -19,13 +18,11 @@ public class CuttingTable : Table
 
             if (_currentClicks >= clicksToCut)
             {
-                // zmiana wariantu na pocięty
                 tableKi.Variant = GetSlicedVariant(tableKi.Variant);
                 _currentClicks = 0;
                 Debug.Log($"[CuttingTable] {tableKi.Variant} zostało pocięte!");
             }
 
-            // podnoszenie tylko jeśli pocięte
             if (heldKi == null && IsSliced(tableKi.Variant))
             {
                 player.RPC_Pickup(tableKi.Object);
@@ -35,8 +32,6 @@ public class CuttingTable : Table
             return;
         }
 
-
-        // --- Gracz trzyma przedmiot do położenia ---
         if (heldKi != null)
         {
             if (!CanBeCut(heldKi.Variant))
@@ -57,10 +52,8 @@ public class CuttingTable : Table
             return;
         }
 
-        // --- Gracz nic nie trzyma, a stół pusty lub nie do krojenia ---
         Debug.Log("[CuttingTable] Stół pusty lub przedmiot nie do krojenia");
     }
-
 
     private bool CanBeCut(ItemVariant variant)
     {
@@ -84,7 +77,6 @@ public class CuttingTable : Table
         };
     }
 
-
     private bool IsSliced(ItemVariant variant)
     {
         return variant == ItemVariant.SlicedOnion ||
@@ -93,5 +85,4 @@ public class CuttingTable : Table
                variant == ItemVariant.SlicedPumpkin ||
                variant == ItemVariant.SlicedMandragora;
     }
-
 }
