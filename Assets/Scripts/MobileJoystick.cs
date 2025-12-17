@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine;
+
 using UnityEngine.EventSystems;
 
 public class MobileJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPointerDownHandler

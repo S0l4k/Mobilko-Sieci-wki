@@ -4,8 +4,8 @@ using UnityEngine.InputSystem;
 public class MobileInputManager : MonoBehaviour
 {
     public static MobileInputManager Instance { get; private set; }
-
-    [SerializeField] private Joystick joystick;
+    [SerializeField] private MobileJoystick joystick;
+    
     [SerializeField] private UnityEngine.UI.Button interactButton;
 
     [HideInInspector] public bool interactPressed = false;

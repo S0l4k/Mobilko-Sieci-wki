@@ -52,30 +52,31 @@ public class BasicSpawner : MonoBehaviour, INetworkRunnerCallbacks
     {
         var data = new NetworkInputData();
 
-        if (Application.isMobilePlatform)
-        {
-            data.direction = new Vector3(
-                MobileInputManager.Instance.GetJoystickDirection().x,
-                0f,
-                MobileInputManager.Instance.GetJoystickDirection().y
-            );
+#if UNITY_ANDROID || UNITY_IOS
+    // PRAWDZIWY JOYSTICK
+    Vector2 joy = MobileInputManager.Instance.GetJoystickDirection();
+    data.mobileDirection = joy;
+    data.interact = MobileInputManager.Instance.interactPressed;
+    MobileInputManager.Instance.ResetInteract();
+#else
+        // SYMULACJA JOYSTICKA NA PC
+        Vector2 simJoy = Vector2.zero;
 
-            data.interact = MobileInputManager.Instance.interactPressed;
-            MobileInputManager.Instance.ResetInteract(); // reset po u¿yciu
-        }
-        else
-        {
-            if (Input.GetKey(KeyCode.W)) data.direction += Vector3.forward;
-            if (Input.GetKey(KeyCode.S)) data.direction += Vector3.back;
-            if (Input.GetKey(KeyCode.A)) data.direction += Vector3.left;
-            if (Input.GetKey(KeyCode.D)) data.direction += Vector3.right;
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow)) simJoy.y += 1f;
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow)) simJoy.y -= 1f;
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) simJoy.x -= 1f;
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) simJoy.x += 1f;
 
-            data.buttons.Set(NetworkInputData.INTERACT, Input.GetKey(KeyCode.E));
-        }
+        simJoy = Vector2.ClampMagnitude(simJoy, 1f);
+        data.mobileDirection = simJoy;
+
+        // Interakcja jak na mobile (np. E)
+        data.interact = Input.GetKeyDown(KeyCode.E);
+#endif
 
         input.Set(data);
-
     }
+
 
 
     public void OnInputMissing(NetworkRunner runner, PlayerRef player, NetworkInput input) { }

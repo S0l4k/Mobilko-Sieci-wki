@@ -1,0 +1,1 @@
+C:\Users\User\Documents\Gitkraken\Mobilko-Sieci-wki\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\RelWithDebInfo\4r2t466n\obj\arm64-v8a

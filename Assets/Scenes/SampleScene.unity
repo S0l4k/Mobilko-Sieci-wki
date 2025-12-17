@@ -8045,6 +8045,17 @@ Transform:
   - {fileID: 1014094463}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &438470821 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4593301216708025902, guid: 2b491c0fc2de361419c66bb5a78161e0, type: 3}
+  m_PrefabInstance: {fileID: 5489111455212334556}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 42211c80707130d4bbc7c1cde83e9c7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &446758775
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21865,6 +21876,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 044d7957fd4430048a5234f12529ed73, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  joystick: {fileID: 438470821}
   interactButton: {fileID: 82337189}
   interactPressed: 0
 --- !u!1001 &1400954683
@@ -33323,6 +33335,10 @@ PrefabInstance:
     - target: {fileID: 28106739499730432, guid: 2b491c0fc2de361419c66bb5a78161e0, type: 3}
       propertyPath: m_Name
       value: Mobile
+      objectReference: {fileID: 0}
+    - target: {fileID: 510571286939841645, guid: 2b491c0fc2de361419c66bb5a78161e0, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 1930838389507961409, guid: 2b491c0fc2de361419c66bb5a78161e0, type: 3}
       propertyPath: m_Pivot.x

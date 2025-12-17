@@ -30,54 +30,38 @@ public class Player : NetworkBehaviour
     // ---------------- NETWORK UPDATE ----------------
     public override void FixedUpdateNetwork()
     {
-        if (GetInput(out NetworkInputData data))
+        if (!GetInput(out NetworkInputData data))
+            return;
+
+        // ---------- RUCH (JOYSTICK / SYMULACJA MOBILE) ----------
+        Vector3 moveDir = new Vector3(
+            data.mobileDirection.x,
+            0f,
+            data.mobileDirection.y
+        );
+
+        if (moveDir.sqrMagnitude > 0.001f)
         {
-            // ---------------- RUCH ----------------
-            Vector3 moveDir = Vector3.zero;
-
-            // PC: WASD
-            moveDir += data.direction;
-
-            // Mobile: joystick
-            moveDir += new Vector3(data.mobileDirection.x, 0f, data.mobileDirection.y);
-
-            if (moveDir.sqrMagnitude > 0f)
-            {
-                moveDir.Normalize();
-                _cc.Move(moveSpeed * moveDir * Runner.DeltaTime);
-                _forward = moveDir;
-                // Aktualizacja animacji
-             
-            }
-            float speed = moveDir.magnitude;
-            // ---------------- INTERACT ----------------
-            bool interactPressed = data.buttons.WasPressed(_previousButtons, NetworkInputData.INTERACT) || data.interact;
-            if (Object.HasInputAuthority && interactPressed)
-                TryInteract();
-
-            _previousButtons = data.buttons;
+            moveDir.Normalize();
+            _cc.Move(moveSpeed * moveDir * Runner.DeltaTime);
+            _forward = moveDir;
         }
 
-        // ---------------- TRZYMANE PRZEDMIOTY (SERVER) ----------------
+        // ---------- INTERACT ----------
+        bool interactPressed =
+            data.buttons.WasPressed(_previousButtons, NetworkInputData.INTERACT)
+            || data.interact;
+
+        if (Object.HasInputAuthority && interactPressed)
+            TryInteract();
+
+        _previousButtons = data.buttons;
+
+        // ---------- TRZYMANE PRZEDMIOTY (SERVER) ----------
         if (HeldItem != null && Object.HasStateAuthority)
         {
             HeldItem.transform.position = holdPoint.position;
             HeldItem.transform.rotation = holdPoint.rotation;
-        }
-
-        // ---------------- INTERPOLACJA CLIENT ----------------
-        if (!Object.HasStateAuthority)
-        {
-            _interpPosition = Vector3.Lerp(_interpPosition, _cc.transform.position, 0.2f);
-            _interpRotation = Quaternion.Slerp(_interpRotation, Quaternion.LookRotation(_forward), 0.2f);
-
-            transform.position = _interpPosition;
-            transform.rotation = _interpRotation;
-        }
-        else
-        {
-            _interpPosition = transform.position;
-            _interpRotation = transform.rotation;
         }
     }
 
